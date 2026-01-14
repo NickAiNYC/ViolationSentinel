@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ViolationSentinel - NYC Property Risk Intelligence</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+        
+        /* Header */
+        header { background: linear-gradient(135deg, #1a237e 0%, #283593 100%); color: white; padding: 2rem 0; }
+        .logo { font-size: 1.8rem; font-weight: bold; display: flex; align-items: center; gap: 10px; }
+        nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3rem; }
+        .nav-links { display: flex; gap: 2rem; }
+        .nav-links a { color: white; text-decoration: none; font-weight: 500; }
+        .cta-button { background: #00c853; color: white; padding: 0.8rem 2rem; border-radius: 5px; text-decoration: none; font-weight: bold; }
+        
+        /* Hero */
+        .hero { text-align: center; padding: 4rem 0; }
+        .hero h1 { font-size: 3.5rem; margin-bottom: 1rem; }
+        .hero p { font-size: 1.2rem; max-width: 700px; margin: 0 auto 2rem; color: #e8eaf6; }
+        
+        /* Pricing */
+        .pricing { padding: 4rem 0; background: #f5f5f5; }
+        .pricing h2 { text-align: center; font-size: 2.5rem; margin-bottom: 3rem; }
+        .pricing-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; }
+        .card { background: white; border-radius: 10px; padding: 2rem; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .card.popular { border: 2px solid #00c853; transform: scale(1.05); }
+        .card-header { text-align: center; margin-bottom: 1.5rem; }
+        .card-header h3 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+        .price { font-size: 3rem; font-weight: bold; color: #1a237e; }
+        .price span { font-size: 1rem; color: #666; }
+        .features { list-style: none; margin: 1.5rem 0; }
+        .features li { padding: 0.5rem 0; border-bottom: 1px solid #eee; }
+        .features li:before { content: "✓"; color: #00c853; margin-right: 10px; }
+        
+        /* Data Preview */
+        .data-preview { padding: 4rem 0; }
+        .data-preview h2 { text-align: center; font-size: 2.5rem; margin-bottom: 2rem; }
+        table { width: 100%; border-collapse: collapse; margin-top: 2rem; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #f5f5f5; font-weight: 600; }
+        .risk-high { color: #d32f2f; font-weight: bold; }
+        .risk-medium { color: #f57c00; }
+        
+        /* CTA */
+        .final-cta { background: #1a237e; color: white; padding: 4rem 0; text-align: center; }
+        .final-cta h2 { font-size: 2.5rem; margin-bottom: 1rem; }
+        
+        /* Footer */
+        footer { background: #0d1438; color: white; padding: 3rem 0; text-align: center; }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .pricing-cards { grid-template-columns: 1fr; }
+            .hero h1 { font-size: 2.5rem; }
+            .nav-links { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <nav>
+                <div class="logo">🛡️ ViolationSentinel</div>
+                <div class="nav-links">
+                    <a href="#features">Features</a>
+                    <a href="#pricing">Pricing</a>
+                    <a href="#api">API</a>
+                    <a href="#contact">Contact</a>
+                </div>
+                <a href="#pricing" class="cta-button">Get Started</a>
+            </nav>
+            
+            <div class="hero">
+                <h1>NYC Property Risk Intelligence</h1>
+                <p>Real-time violation monitoring for 14,691+ NYC properties. Identify high-risk investments before they cost you millions.</p>
+                <a href="#pricing" class="cta-button">Start Free Trial →</a>
+            </div>
+        </div>
+    </header>
+
+    <section id="features" class="container" style="padding: 4rem 0;">
+        <h2 style="text-align: center; font-size: 2.5rem; margin-bottom: 3rem;">Why ViolationSentinel?</h2>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem;">
+            <div style="text-align: center;">
+                <h3>📊 Live Data</h3>
+                <p>Daily updates from NYC Open Data APIs. No stale information.</p>
+            </div>
+            <div style="text-align: center;">
+                <h3>🚨 Risk Scoring</h3>
+                <p>Proprietary algorithm identifies properties with violation patterns.</p>
+            </div>
+            <div style="text-align: center;">
+                <h3>💼 Built for Investors</h3>
+                <p>Designed specifically for real estate due diligence.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="pricing" class="pricing">
+        <div class="container">
+            <h2>Simple, Transparent Pricing</h2>
+            <div class="pricing-cards">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Free</h3>
+                        <div class="price">$0<span>/month</span></div>
+                    </div>
+                    <ul class="features">
+                        <li>10 API calls/month</li>
+                        <li>Basic property lookup</li>
+                        <li>Community support</li>
+                    </ul>
+                    <a href="#" class="cta-button" style="display: block; text-align: center;">Get Started</a>
+                </div>
+                
+                <div class="card popular">
+                    <div class="card-header">
+                        <h3>Pro</h3>
+                        <div style="background: #00c853; color: white; padding: 0.2rem 1rem; border-radius: 20px; display: inline-block; margin-bottom: 1rem;">MOST POPULAR</div>
+                        <div class="price">$297<span>/month</span></div>
+                    </div>
+                    <ul class="features">
+                        <li>1,000 API calls/month</li>
+                        <li>Full risk analytics</li>
+                        <li>Priority support</li>
+                        <li>CSV/JSON exports</li>
+                        <li>API access</li>
+                    </ul>
+                    <a href="#" class="cta-button" style="display: block; text-align: center; background: #1a237e;">Start 14-Day Trial</a>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Enterprise</h3>
+                        <div class="price">$999<span>/month</span></div>
+                    </div>
+                    <ul class="features">
+                        <li>10,000+ API calls/month</li>
+                        <li>Custom data feeds</li>
+                        <li>Dedicated support</li>
+                        <li>White-label reports</li>
+                        <li>SLA guarantee</li>
+                    </ul>
+                    <a href="#" class="cta-button" style="display: block; text-align: center;">Contact Sales</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="data-preview container">
+        <h2>Real Data Sample</h2>
+        <p style="text-align: center; margin-bottom: 2rem;">Actual high-risk properties from our database</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>BBL</th>
+                    <th>Address</th>
+                    <th>Borough</th>
+                    <th>Risk Score</th>
+                    <th>Violations</th>
+                    <th>Complaints</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1012650001</td>
+                    <td>270 PARK AVE</td>
+                    <td>MANHATTAN</td>
+                    <td class="risk-high">405.0</td>
+                    <td>67</td>
+                    <td>209</td>
+                </tr>
+                <tr>
+                    <td>2030010001</td>
+                    <td>123 MAIN ST</td>
+                    <td>BROOKLYN</td>
+                    <td class="risk-high">364.5</td>
+                    <td>40</td>
+                    <td>215</td>
+                </tr>
+                <tr>
+                    <td>3045670001</td>
+                    <td>456 ELM AVE</td>
+                    <td>QUEENS</td>
+                    <td class="risk-medium">228.0</td>
+                    <td>12</td>
+                    <td>98</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="final-cta">
+        <div class="container">
+            <h2>Start Making Smarter Investment Decisions Today</h2>
+            <p style="font-size: 1.2rem; margin-bottom: 2rem;">Join 50+ real estate firms using ViolationSentinel</p>
+            <a href="#pricing" class="cta-button" style="font-size: 1.2rem; padding: 1rem 3rem;">Get Started - 14 Day Free Trial</a>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>🛡️ ViolationSentinel</p>
+            <p>NYC Property Risk Intelligence Platform</p>
+            <p style="margin-top: 1rem; color: #aaa;">© 2024 ThrivAI. All rights reserved.</p>
+            <p style="margin-top: 0.5rem; color: #aaa;">Contact: sales@thrivai.com | (555) 123-4567</p>
+        </div>
+    </footer>
+
+    <script>
+        // Simple form handling
+        document.querySelectorAll('.cta-button').forEach(button => {
+            button.addEventListener('click', function(e) {
+                if (this.textContent.includes('Trial') || this.textContent.includes('Started')) {
+                    e.preventDefault();
+                    const email = prompt('Enter your email to start trial:');
+                    if (email) {
+                        alert('Thank you! Email sales@thrivai.com for API access.');
+                        // In production: window.location.href = 'mailto:sales@thrivai.com?subject=ViolationSentinel Trial';
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

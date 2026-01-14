@@ -1,112 +1,170 @@
-# ViolationSentinel – NYC Property Compliance Intelligence
+# 🛡️ ViolationSentinel – NYC Property Risk Intelligence
 
-Production-grade daily data pipeline delivering actionable NYC property risk signals from official HPD violations and 311 complaint systems.
+**Production-grade data pipeline + Monetization system for NYC property violation monitoring**
 
-![Status](https://img.shields.io/badge/Status-MVP%20Live-brightgreen?style=flat-square)
-![Last Run](https://img.shields.io/badge/Last%20Run-Dec%2029%2C%202025-blue?style=flat-square)
-![Properties](https://img.shields.io/badge/Properties-14%2C691+-yellow?style=flat-square)
-![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)
+![Status](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)
+![Monetization](https://img.shields.io/badge/Monetization-$297/month-blue)
+![License](https://img.shields.io/badge/License-MIT-yellow)
 
-## Pipeline Snapshot – Last Run: Dec 29, 2025 (90-day window)
+## 🚀 Get Started in 10 Minutes
 
-| Metric                                   | Value     | Change |
-|------------------------------------------|-----------|--------|
-| Total Properties Monitored               | 14,691    | —      |
-| Properties with Violations               | 7,242     | —      |
-| Properties with Class B Violations       | 4,937     | —      |
-| Properties with Heat/Plumbing Complaints | 13,200    | —      |
-| Average Risk Score                       | 9.67      | —      |
-| Maximum Risk Score                       | 405.0     | —      |
-
-## What This Delivers
-
-A clean, reliable, commercial-grade data product that:
-
-1. Fetches daily updates from official NYC Open Data APIs (no scraping)  
-2. Joins HPD Violations (wvxf-dwi5) with filtered 311 Complaints (erm2-nwe9) on BBL  
-3. Aggregates per property: total violations, Class B count, heat/plumbing complaint count  
-4. Calculates a simple composite risk score (customizable)  
-5. Exports ready-to-use files: full dataset, top-100 client sample, anonymized demo
-
-Data Coverage: Rolling 90-day window (configurable)  
-Refresh: Daily automated (cron-ready)
-
-## Latest Run Highlights
-
-Top 3 Highest-Risk Properties (anonymized):
-
-1. Risk Score: 405.0  
-   - Class B Violations: 29  
-   - 311 Heat/Plumbing Complaints: 209  
-   - Total Violations: 67  
-
-2. Risk Score: 364.5  
-   - Class B Violations: 11  
-   - 311 Heat/Plumbing Complaints: 215  
-   - Total Violations: 40  
-
-3. Risk Score: 345.0  
-   - Class B Violations: 1  
-   - 311 Heat/Plumbing Complaints: 228  
-   - Total Violations: 2  
-
-## Quick Start
-
-### Prerequisites
+### Quick Start
+```bash
+# 1. Install dependencies
 pip install -r requirements.txt
-# or manually:
-pip install pandas requests python-dotenv
 
-### Configuration
-Create .env file in project root:
+# 2. Start the API server
+./start_api.sh
 
-SOCRATA_APP_TOKEN=your_token_here
+# 3. Access API documentation
+# Open http://localhost:8000/docs
 
-Get free token: https://dev.socrata.com → sign in → Developer Settings → App Tokens
+# 4. Deploy landing page
+# Upload landing_page.html to Netlify/GitHub Pages
+```
 
-### Run the pipeline
-python fetch_final.py
+### First Customer in 2 Hours
+1. **Deploy landing page** to Netlify (drag & drop)
+2. **Send 5 emails** using templates in `docs/outreach_templates.md`
+3. **Process payment** ($297 via PayPal/Venmo)
+4. **Generate API key**: `python admin_tools.py add customer@email.com`
 
-Generated files (timestamped):
-- nyc_compliance_full_*.csv — full dataset (~14k+ properties)  
-- nyc_compliance_sample_*.json — top 100 highest-risk (client-ready)  
-- nyc_compliance_demo_*.csv — anonymized top 50 (for demos/presentations)
+## 📊 What This Is
 
-## Commercial Licensing & Pricing (2025 Pilot Rates)
+A complete system to monetize NYC property violation data:
+- **Data Pipeline:** Fetches HPD violations + 311 complaints for 14,691+ NYC properties
+- **API Server:** FastAPI with API key authentication and usage limits
+- **Monetization:** $297/month Pro tier, $999/month Enterprise
+- **Landing Page:** Professional sales page ready to deploy
+- **Admin Tools:** Command-line tools for customer management
 
-Tier          | Monthly Price | Properties Limit | Features                              | Best For
---------------|---------------|------------------|---------------------------------------|---------------------------------------
-Starter       | $750          | ≤10,000          | Daily CSV/JSON, basic support         | Early-stage PropTech, nonprofits
-Professional  | $1,500        | Unlimited        | API endpoint, SLA, priority support   | Mid-size platforms & analytics firms
-Enterprise    | Custom        | Unlimited        | On-prem, white-label, historical data | Large insurers, enterprise SaaS
+## 💰 Business Model
 
-Free 30-day pilot available — includes custom sample feed and support.
+### Pricing
+| Tier | Price | API Calls/Month | Target Customer |
+|------|-------|----------------|-----------------|
+| Free | $0 | 10 | Evaluation, testing |
+| **Pro** | **$297** | **1,000** | **Real estate investors** |
+| Enterprise | $999 | 10,000+ | Funds, property managers |
 
-Use Cases
-- Property management SaaS → real-time compliance alerts
-- Landlord fintech → tenant & property risk scoring
-- Real estate analytics → distressed asset screening
-- Nonprofits → enforcement monitoring & advocacy
-- Insurance → property risk underwriting
+### Revenue Projection
+- **Month 1:** 10 customers = $2,970 MRR
+- **Month 3:** 30 customers = $8,910 MRR  
+- **Month 6:** 50 customers = $14,850 MRR
+- **Profit Margin:** ~85% (low infrastructure costs)
 
-Ready to integrate?
-Email [your-email] with subject: "PILOT – NYC Compliance Feed"
-We'll send a free trial feed + support setup within 24 hours.
+## 📁 Project Structure
 
-## Tech Stack
-- Python 3.10+
-- pandas (aggregation & cleaning)
-- requests (API calls)
-- python-dotenv (secure token management)
+```
+ViolationSentinel/
+├── simple_api.py           # FastAPI server with monetization
+├── simple_monetization.py  # User & payment management
+├── landing_page.html       # Sales landing page
+├── admin_tools.py          # Admin commands for customer management
+├── start_api.sh            # One-click startup script
+├── fetch_final.py          # Data pipeline (fetches from NYC Open Data)
+├── requirements.txt        # Python dependencies
+├── LICENSE
+├── .gitignore
+├── data/                   # Sample data files
+│   ├── nyc_compliance_demo_*.csv
+│   └── nyc_compliance_full_*.csv
+└── docs/                   # Documentation
+    ├── MONETIZATION_README.md
+    └── outreach_templates.md
+```
 
-## Legal & Disclaimer
-Data sourced from official NYC Open Data APIs (public domain).  
-This pipeline is provided as-is. Not legal, financial, or investment advice.  
-Use for informational/business intelligence purposes only.
+## 🌐 API Endpoints
 
-MIT License – see LICENSE file.
+### Base URL: `http://localhost:8000`
 
-Questions, pilots, partnerships, or customizations?  
-Open an issue or contact the maintainer.
+### Authentication
+All endpoints require `X-API-Key` header.
 
-Built by NickAiNYC | December 2025
+### Key Endpoints
+- `GET /` - API status
+- `GET /properties` - Filter properties by borough, risk score, etc.
+- `GET /property/{bbl}` - Get specific property by BBL
+- `GET /high-risk` - Get highest risk properties
+- `GET /usage` - Check your API usage
+
+## 🛠️ Admin Commands
+
+```bash
+# List all users
+python admin_tools.py list
+
+# Add new customer
+python admin_tools.py add customer@email.com pro
+
+# Upgrade customer tier
+python admin_tools.py upgrade customer@email.com enterprise
+
+# Reset usage counter
+python admin_tools.py reset customer@email.com
+
+# Show business stats
+python admin_tools.py stats
+```
+
+## 🎯 Customer Acquisition
+
+### Target Audience
+1. Real estate investors in NYC
+2. Property management companies
+3. Hedge funds (real estate division)
+4. Insurance companies
+5. Law firms (real estate practice)
+
+### Outreach Strategy
+- **Cold Email:** Use templates in `docs/outreach_templates.md`
+- **LinkedIn:** Connect with real estate professionals
+- **Referrals:** Offer $500 referral bonus
+- **Content:** Blog posts about NYC property risks
+
+## 🔄 Development Roadmap
+
+### Phase 1: Manual System (Now)
+- [x] API with key authentication
+- [x] Landing page
+- [x] Admin tools
+- [ ] First 10 customers
+
+### Phase 2: Automation (Month 2)
+- [ ] Stripe integration
+- [ ] Self-service signup
+- [ ] Admin dashboard
+- [ ] Automated billing
+
+### Phase 3: Scale (Month 3+)
+- [ ] Mobile app
+- [ ] Additional data sources (DOB, ECB)
+- [ ] Team features
+- [ ] Multi-city expansion
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Open a Pull Request
+
+## 📄 License
+
+MIT License - see LICENSE file for details.
+
+## 📞 Support
+
+- **Sales:** sales@thrivai.com
+- **API Docs:** http://localhost:8000/docs (when server running)
+- **Business Questions:** Open an issue
+
+## 🚀 Immediate Next Steps
+
+1. **Start API:** `./start_api.sh`
+2. **Deploy landing page:** Upload to Netlify
+3. **Send emails:** Use templates in `docs/outreach_templates.md`
+4. **Get first customer:** Process manual payment
+
+**Your first $297 is waiting. Launch now.**
