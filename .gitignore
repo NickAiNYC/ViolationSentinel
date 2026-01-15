@@ -60,3 +60,18 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+
+# ML Models
+models/*.pkl
+models/*.joblib
+models/*.h5
+!models/.gitkeep
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# Docker
+*.pid
