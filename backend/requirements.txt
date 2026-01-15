@@ -81,6 +81,9 @@ pytz>=2023.3
 arrow>=1.3.0
 python-json-logger>=2.0.7
 
+# -------------------- Logging --------------------
+pythonjsonlogger>=2.0.7
+
 # -------------------- Notifications --------------------
 sendgrid>=6.11.0  # Email
 twilio>=8.11.0  # SMS

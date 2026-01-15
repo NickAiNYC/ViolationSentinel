@@ -26,7 +26,9 @@ except Exception as e:
 # Run migrations
 echo ""
 echo "🔄 Running Alembic migrations..."
-cd /home/runner/work/ViolationSentinel/ViolationSentinel
+# Navigate to project root
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR/.."
 alembic upgrade head
 
 echo ""

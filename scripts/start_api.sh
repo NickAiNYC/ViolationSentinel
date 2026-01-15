@@ -6,7 +6,8 @@ set -e
 echo "🚀 Starting ViolationSentinel API"
 echo "================================================"
 
-cd /home/runner/work/ViolationSentinel/ViolationSentinel
+# Navigate to project root (one level up from scripts/)
+cd "$(dirname "$0")/.."
 
 # Check if virtual environment should be activated
 if [ -d "venv" ]; then

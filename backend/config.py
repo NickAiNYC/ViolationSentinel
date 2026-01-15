@@ -6,7 +6,7 @@ Environment-based configuration with secure defaults
 import os
 from typing import Optional
 from pydantic_settings import BaseSettings
-from pydantic import PostgresDsn, RedisDsn, field_validator
+from pydantic import PostgresDsn, RedisDsn
 
 
 class Settings(BaseSettings):
@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = os.getenv(
         "DATABASE_URL",
-        "postgresql://postgres:postgres@localhost:5432/violation_sentinel"
+        "postgresql+asyncpg://postgres:postgres@localhost:5432/violation_sentinel"
     )
     DATABASE_POOL_SIZE: int = 20
     DATABASE_MAX_OVERFLOW: int = 10
