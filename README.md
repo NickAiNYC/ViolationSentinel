@@ -1,170 +1,157 @@
-# 🛡️ ViolationSentinel – NYC Property Risk Intelligence
+# 🏢 ViolationSentinel: NYC Property Compliance Dashboard
 
-**Production-grade data pipeline + Monetization system for NYC property violation monitoring**
+> **Production-ready violation monitoring for landlords, property managers, and PropTech platforms**
 
-![Status](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)
-![Monetization](https://img.shields.io/badge/Monetization-$297/month-blue)
-![License](https://img.shields.io/badge/License-MIT-yellow)
+## 🎯 Built for Property Management
 
-## 🚀 Get Started in 10 Minutes
+ViolationSentinel provides comprehensive NYC property violation monitoring specifically designed for landlords and property managers. It tracks DOB, HPD, and 311 violations across your entire portfolio with real-time alerts and compliance reporting.
 
-### Quick Start
+### 🚀 Landlord-Specific Features
+
+- **DOB Violation Monitoring**: Department of Buildings violations tracking
+- **HPD Violation Dashboard**: Housing Preservation Department violations
+- **311 Complaint Tracking**: Tenant and neighbor complaints
+- **Portfolio Management**: Monitor multiple properties in one dashboard
+- **Risk Assessment**: Automated risk scoring for each property
+- **Compliance Reporting**: Ready-to-share compliance reports
+- **Real-time Alerts**: Get notified of new violations
+
+## 📊 Property Management Workflow
+
+| Task | Manual Process | With ViolationSentinel |
+|------|----------------|------------------------|
+| **Violation Checks** | Manual API queries per property | **Automated portfolio scanning** |
+| **Compliance Tracking** | Spreadsheet management | **Centralized dashboard** |
+| **Risk Assessment** | Subjective evaluation | **Data-driven risk scoring** |
+| **Reporting** | Manual compilation | **Automated report generation** |
+| **Alerts** | Manual monitoring | **Real-time notifications** |
+
+## 🏢 Landlord & Property Manager Use Cases
+
+1. **Portfolio Monitoring**: Track violations across all properties
+2. **Due Diligence**: Pre-purchase violation checks
+3. **Compliance Management**: Stay ahead of regulatory requirements
+4. **Tenant Relations**: Proactively address complaint patterns
+5. **Insurance Reporting**: Document compliance for carriers
+6. **Property Valuation**: Understand violation impact on value
+
+## 🛠️ Technology Stack
+
+- **Data Sources**: NYC Open Data (SOCRATA API) - DOB, HPD, 311
+- **Backend**: Python, FastAPI, PostgreSQL (optional)
+- **Dashboard**: Streamlit for real-time monitoring
+- **Alerts**: Email, SMS, or webhook integrations
+- **Reporting**: PDF/Excel export for compliance documentation
+
+## 🚀 Quick Start for Landlords
+
+### Prerequisites
+- Python 3.11+
+- NYC Open Data App Token (optional, for higher limits)
+- Property BBL numbers (10-digit identifiers)
+
+### Installation
 ```bash
-# 1. Install dependencies
+# Clone the repository
+git clone https://github.com/NickAiNYC/ViolationSentinel.git
+cd ViolationSentinel
+
+# Install dependencies
 pip install -r requirements.txt
 
-# 2. Start the API server
-./start_api.sh
-
-# 3. Access API documentation
-# Open http://localhost:8000/docs
-
-# 4. Deploy landing page
-# Upload landing_page.html to Netlify/GitHub Pages
+# Set up configuration
+cp .env.example .env
+# Edit .env with your NYC Open Data token
 ```
 
-### First Customer in 2 Hours
-1. **Deploy landing page** to Netlify (drag & drop)
-2. **Send 5 emails** using templates in `docs/outreach_templates.md`
-3. **Process payment** ($297 via PayPal/Venmo)
-4. **Generate API key**: `python admin_tools.py add customer@email.com`
+### Running the Dashboard
+```bash
+# Start the landlord dashboard
+streamlit run landlord_dashboard.py
 
-## 📊 What This Is
+# Or use the CLI monitor
+python monitor_cli.py
+```
 
-A complete system to monetize NYC property violation data:
-- **Data Pipeline:** Fetches HPD violations + 311 complaints for 14,691+ NYC properties
-- **API Server:** FastAPI with API key authentication and usage limits
-- **Monetization:** $297/month Pro tier, $999/month Enterprise
-- **Landing Page:** Professional sales page ready to deploy
-- **Admin Tools:** Command-line tools for customer management
-
-## 💰 Business Model
-
-### Pricing
-| Tier | Price | API Calls/Month | Target Customer |
-|------|-------|----------------|-----------------|
-| Free | $0 | 10 | Evaluation, testing |
-| **Pro** | **$297** | **1,000** | **Real estate investors** |
-| Enterprise | $999 | 10,000+ | Funds, property managers |
-
-### Revenue Projection
-- **Month 1:** 10 customers = $2,970 MRR
-- **Month 3:** 30 customers = $8,910 MRR  
-- **Month 6:** 50 customers = $14,850 MRR
-- **Profit Margin:** ~85% (low infrastructure costs)
-
-## 📁 Project Structure
+## 📁 Project Structure for Property Management
 
 ```
 ViolationSentinel/
-├── simple_api.py           # FastAPI server with monetization
-├── simple_monetization.py  # User & payment management
-├── landing_page.html       # Sales landing page
-├── admin_tools.py          # Admin commands for customer management
-├── start_api.sh            # One-click startup script
-├── fetch_final.py          # Data pipeline (fetches from NYC Open Data)
-├── requirements.txt        # Python dependencies
-├── LICENSE
-├── .gitignore
-├── data/                   # Sample data files
-│   ├── nyc_compliance_demo_*.csv
-│   └── nyc_compliance_full_*.csv
-└── docs/                   # Documentation
-    ├── MONETIZATION_README.md
-    └── outreach_templates.md
+├── landlord_dashboard.py  # Main property management dashboard
+├── dob_violations/        # DOB violation monitoring
+│   └── dob_engine.py     # DOB violation fetching & analysis
+├── fetch_final.py         # HPD/311 data fetching (production)
+├── real_time_monitor.py   # Real-time monitoring service
+├── dashboard.py           # Analytics dashboard
+├── data/                  # Property data and samples
+├── docs/                  # Documentation
+└── requirements.txt       # Dependencies
 ```
 
-## 🌐 API Endpoints
+## 🔧 Property Management API
 
-### Base URL: `http://localhost:8000`
+### Monitor Single Property
+```python
+from dob_violations.dob_engine import DOBViolationMonitor
 
-### Authentication
-All endpoints require `X-API-Key` header.
-
-### Key Endpoints
-- `GET /` - API status
-- `GET /properties` - Filter properties by borough, risk score, etc.
-- `GET /property/{bbl}` - Get specific property by BBL
-- `GET /high-risk` - Get highest risk properties
-- `GET /usage` - Check your API usage
-
-## 🛠️ Admin Commands
-
-```bash
-# List all users
-python admin_tools.py list
-
-# Add new customer
-python admin_tools.py add customer@email.com pro
-
-# Upgrade customer tier
-python admin_tools.py upgrade customer@email.com enterprise
-
-# Reset usage counter
-python admin_tools.py reset customer@email.com
-
-# Show business stats
-python admin_tools.py stats
+monitor = DOBViolationMonitor()
+result = monitor.check_property("1012650001", "123 Main St Apartments")
+print(f"Risk Level: {result['risk_level']}")
+print(f"Violations: {result['summary']['total']}")
 ```
 
-## 🎯 Customer Acquisition
+### Monitor Entire Portfolio
+```python
+from dob_violations.dob_engine import DOBViolationMonitor
 
-### Target Audience
-1. Real estate investors in NYC
-2. Property management companies
-3. Hedge funds (real estate division)
-4. Insurance companies
-5. Law firms (real estate practice)
+portfolio = [
+    {"name": "Building A", "bbl": "1012650001", "units": 24},
+    {"name": "Building B", "bbl": "1012650002", "units": 12},
+]
 
-### Outreach Strategy
-- **Cold Email:** Use templates in `docs/outreach_templates.md`
-- **LinkedIn:** Connect with real estate professionals
-- **Referrals:** Offer $500 referral bonus
-- **Content:** Blog posts about NYC property risks
+monitor = DOBViolationMonitor()
+results = monitor.check_portfolio(portfolio)
+print(f"Scanned {results['properties_checked']} properties")
+print(f"Total violations: {results['portfolio_summary']['total']}")
+```
 
-## 🔄 Development Roadmap
+## 📊 Landlord Workflow Example
 
-### Phase 1: Manual System (Now)
-- [x] API with key authentication
-- [x] Landing page
-- [x] Admin tools
-- [ ] First 10 customers
+1. **Add Properties** to your portfolio with BBL numbers
+2. **Automated Scanning** checks DOB, HPD, and 311 databases
+3. **Risk Assessment** calculates risk levels for each property
+4. **Dashboard View** shows portfolio-wide compliance status
+5. **Alerts & Reports** for proactive management
 
-### Phase 2: Automation (Month 2)
-- [ ] Stripe integration
-- [ ] Self-service signup
-- [ ] Admin dashboard
-- [ ] Automated billing
+## 🏛️ NYC Compliance Coverage
 
-### Phase 3: Scale (Month 3+)
-- [ ] Mobile app
-- [ ] Additional data sources (DOB, ECB)
-- [ ] Team features
-- [ ] Multi-city expansion
+- **DOB Violations**: Building code and permit violations
+- **HPD Violations**: Housing maintenance code violations
+- **311 Complaints**: Tenant and public complaints
+- **Violation Classes**: A (non-hazardous), B (hazardous), C (immediately hazardous)
+- **Resolution Tracking**: Open vs. resolved violation monitoring
 
-## 🤝 Contributing
+## 🏗️ Related Project: Scope
 
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Open a Pull Request
+For **general contractors and construction companies** needing construction site compliance and progress tracking, see our sister project:
+
+**[Scope](https://github.com/NickAiNYC/Scope)** - Construction site compliance auditor
 
 ## 📄 License
 
-MIT License - see LICENSE file for details.
+MIT License - See [LICENSE](LICENSE) file for details.
 
-## 📞 Support
+## 📈 Production Ready
 
-- **Sales:** sales@thrivai.com
-- **API Docs:** http://localhost:8000/docs (when server running)
-- **Business Questions:** Open an issue
+This system currently monitors **15,973+ properties** with daily updates of HPD violations and 311 complaints. Ready for commercial licensing and PropTech platform integration.
 
-## 🚀 Immediate Next Steps
+## 🙏 Acknowledgments
 
-1. **Start API:** `./start_api.sh`
-2. **Deploy landing page:** Upload to Netlify
-3. **Send emails:** Use templates in `docs/outreach_templates.md`
-4. **Get first customer:** Process manual payment
+- **NYC Open Data** for comprehensive violation databases
+- **PropTech community** for workflow validation
+- **Property managers** for real-world testing
 
-**Your first $297 is waiting. Launch now.**
+---
+
+*ViolationSentinel is maintained for the property management community.*
+*Built for landlords, by data experts.*
