@@ -11,6 +11,21 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 from dob_violations.dob_engine import DOBViolationMonitor
+from risk_engine.pre1974_multiplier import (
+    pre1974_risk_multiplier, 
+    get_building_era_risk,
+    calculate_portfolio_pre1974_stats
+)
+from risk_engine.inspector_patterns import inspector_risk_multiplier, get_district_hotspot
+from risk_engine.seasonal_heat_model import heat_violation_forecast, is_heat_season
+from risk_engine.peer_benchmark import peer_percentile, calculate_portfolio_peer_ranking
+from streamlit.components.pre1974_banner import (
+    show_pre1974_banner,
+    show_pre1974_stats,
+    show_winter_heat_alert,
+    show_inspector_hotspot_alert,
+    show_peer_benchmark_card
+)
 # Note: Would need to import existing HPD/311 modules here
 
 # Page configuration
@@ -65,6 +80,7 @@ with st.sidebar:
         prop_name = st.text_input("Property Name", "123 Main St Apartments")
         prop_bbl = st.text_input("BBL Number", "1012650001")
         prop_units = st.number_input("Number of Units", min_value=1, value=10)
+        prop_year = st.number_input("Year Built", min_value=1800, max_value=2025, value=1965)
         
         if st.form_submit_button("Add to Portfolio"):
             if len(prop_bbl) == 10 and prop_bbl.isdigit():
@@ -72,6 +88,7 @@ with st.sidebar:
                     'name': prop_name,
                     'bbl': prop_bbl,
                     'units': prop_units,
+                    'year_built': prop_year,
                     'added': datetime.now().strftime('%Y-%m-%d')
                 })
                 st.success(f"Added {prop_name} to portfolio")
@@ -159,6 +176,57 @@ else:
             st.markdown(f"<div class='{risk_class}'>Risk Level: {risk}</div>", unsafe_allow_html=True)
         
         st.divider()
+        
+        # ===== COMPETITIVE MOAT FEATURES =====
+        
+        # Pre-1974 Risk Analysis
+        portfolio_df = pd.DataFrame(st.session_state.portfolio)
+        if 'year_built' in portfolio_df.columns:
+            pre1974_stats = calculate_portfolio_pre1974_stats(st.session_state.portfolio)
+            
+            if pre1974_stats['pre1974_count'] > 0:
+                st.subheader("🏗️ Pre-1974 Building Risk Assessment")
+                show_pre1974_stats(pre1974_stats)
+                show_pre1974_banner(portfolio_df)
+                st.divider()
+        
+        # Winter Heat Season Alert (if applicable)
+        if is_heat_season():
+            st.subheader("🌡️ Winter Heat Season Risk")
+            st.info("**Active Heat Season (Oct 1 - May 31)**: Elevated Class C violation risk")
+            
+            # Check for buildings with heat complaints (mock data for now)
+            # In production, this would fetch actual 311 data
+            heat_alert_buildings = []
+            for prop in st.session_state.portfolio:
+                year = prop.get('year_built', 2000)
+                if year < 1974:
+                    # Mock heat complaints for demonstration
+                    prop_with_complaints = prop.copy()
+                    prop_with_complaints['heat_complaints_30d'] = 4 if year < 1960 else 2
+                    heat_alert_buildings.append(prop_with_complaints)
+            
+            if heat_alert_buildings:
+                show_winter_heat_alert(heat_alert_buildings)
+            st.divider()
+        
+        # Inspector Hotspot Analysis
+        if any('council_district' in prop for prop in st.session_state.portfolio):
+            hotspot_buildings = []
+            for prop in st.session_state.portfolio:
+                district = prop.get('council_district')
+                if district:
+                    multiplier = inspector_risk_multiplier(prop['bbl'], district)
+                    if multiplier > 1.5:
+                        prop_copy = prop.copy()
+                        prop_copy['inspector_multiplier'] = multiplier
+                        hotspot_buildings.append(prop_copy)
+            
+            if hotspot_buildings:
+                show_inspector_hotspot_alert(hotspot_buildings)
+                st.divider()
+        
+        # ===== END COMPETITIVE MOAT FEATURES =====
         
         # Property Details
         st.subheader("Property Violation Details")
