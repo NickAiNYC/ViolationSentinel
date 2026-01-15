@@ -18,8 +18,12 @@ plotly>=5.17.0
 # Payments
 stripe>=7.0.0
 
-# Excel export
+# Email Alerts
+sendgrid>=6.11.0
+
+# Export formats
 openpyxl>=3.1.0
+reportlab>=4.0.0
 
 # Development
 pytest>=7.4.0

@@ -1,6 +1,6 @@
 """
 ViolationSentinel V1 - Streamlit Dashboard
-NYC Property Compliance Risk Dashboard for Landlords
+NYC Property Compliance Risk Dashboard for Landlords with PDF/Excel Export
 """
 
 import streamlit as st
@@ -8,6 +8,7 @@ import pandas as pd
 import io
 from datetime import datetime
 import plotly.express as px
+from streamlit.export_utils import generate_pdf_report, generate_excel_report
 
 # Page config
 st.set_page_config(
@@ -210,7 +211,8 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("### 📥 Export")
     if st.session_state.portfolio_df is not None:
-        col1, col2 = st.columns(2)
+        col1, col2, col3 = st.columns(3)
+        
         with col1:
             # CSV export
             csv = st.session_state.portfolio_df.to_csv(index=False)
@@ -221,15 +223,27 @@ with st.sidebar:
                 mime="text/csv",
                 use_container_width=True
             )
+        
         with col2:
-            # PDF export (stub - would use reportlab in production)
+            # PDF export
+            pdf_buffer = generate_pdf_report(st.session_state.portfolio_df)
             st.download_button(
                 label="📑 PDF",
-                data="PDF export coming soon",
+                data=pdf_buffer,
                 file_name=f"portfolio_{datetime.now().strftime('%Y%m%d')}.pdf",
                 mime="application/pdf",
-                use_container_width=True,
-                disabled=True
+                use_container_width=True
+            )
+        
+        with col3:
+            # Excel export
+            excel_buffer = generate_excel_report(st.session_state.portfolio_df)
+            st.download_button(
+                label="📊 Excel",
+                data=excel_buffer,
+                file_name=f"portfolio_{datetime.now().strftime('%Y%m%d')}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                use_container_width=True
             )
 
 # Main content
