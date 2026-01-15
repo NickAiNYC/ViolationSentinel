@@ -9,6 +9,7 @@ This feature converts leads by showing landlords where they stand vs. peers.
 
 from typing import Dict, List, Optional
 import statistics
+import random  # For mock data generation in demonstration mode
 
 
 def peer_percentile(
@@ -220,8 +221,6 @@ def _generate_similar_building_scores(building_data: Dict) -> List[Dict]:
     Generate mock similar building scores for demonstration.
     In production, this queries actual database.
     """
-    import random
-    
     # Generate 50-200 similar buildings with realistic score distribution
     count = random.randint(80, 200)
     scores = []
@@ -237,8 +236,6 @@ def _generate_similar_building_scores(building_data: Dict) -> List[Dict]:
 
 def _generate_similar_buildings(building_data: Dict) -> List[Dict]:
     """Generate mock similar buildings with full data."""
-    import random
-    
     base_units = building_data.get('units', 24)
     base_year = building_data.get('year_built', 1965)
     borough = building_data.get('borough', 'Brooklyn')

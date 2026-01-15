@@ -11,6 +11,10 @@ from typing import List, Dict, Optional
 from datetime import datetime
 import io
 
+# Pricing constants for easy updates
+MONTHLY_SERVICE_COST = 99  # dollars per month
+AVERAGE_CLASS_C_FINE = 15000  # Average Class C violation fine
+
 
 def generate_outreach_pdf(
     portfolio_bbls: List[str],
@@ -163,8 +167,8 @@ def _generate_pdf_text_content(
         lines.append(f"  ({len(high_risk)} high-risk buildings × $5K-$15K avg fines)")
     
     lines.append("")
-    lines.append("ViolationSentinel Prevention Cost: $99/month")
-    lines.append(f"ROI: Avoid 1 Class C violation = {150000/99:.0f} months of service")
+    lines.append(f"ViolationSentinel Prevention Cost: ${MONTHLY_SERVICE_COST}/month")
+    lines.append(f"ROI: Avoid 1 Class C violation = {AVERAGE_CLASS_C_FINE/MONTHLY_SERVICE_COST:.0f} months of service")
     lines.append("")
     lines.append("")
     
@@ -207,7 +211,7 @@ def _generate_pdf_text_content(
     lines.append("  • Winter heat season forecasting")
     lines.append("  • Automated compliance alerts")
     lines.append("")
-    lines.append("Pricing: $99/month (unlimited properties)")
+    lines.append("Pricing: ${}/ month (unlimited properties)".format(MONTHLY_SERVICE_COST))
     lines.append("Cancel anytime. NYC Open Data analysis only.")
     lines.append("")
     lines.append("Contact: support@violationsentinel.com")

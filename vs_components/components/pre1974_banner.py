@@ -7,7 +7,7 @@ Core competitive moat UI element.
 
 import streamlit as st
 import pandas as pd
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 
 def show_pre1974_banner(buildings_df: pd.DataFrame) -> None:

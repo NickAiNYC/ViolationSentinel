@@ -12,6 +12,10 @@ Source: 311 heat complaint data + HPD Class C violation timing analysis
 from typing import Dict, Optional
 from datetime import datetime
 
+# Building age thresholds (imported from pre1974_multiplier for consistency)
+CRITICAL_YEAR_THRESHOLD = 1960  # Pre-1960 = critical risk
+ELEVATED_YEAR_THRESHOLD = 1974  # Pre-1974 = elevated risk
+
 
 def heat_violation_forecast(
     heat_complaints_30d: int, 
@@ -190,9 +194,9 @@ def calculate_winter_risk_score(building_data: Dict) -> Dict:
     # Building age factor
     year_built = building_data.get('year_built')
     age_factor = 1.0
-    if year_built and year_built < 1960:
+    if year_built and year_built < CRITICAL_YEAR_THRESHOLD:
         age_factor = 1.8  # Old HVAC systems
-    elif year_built and year_built < 1974:
+    elif year_built and year_built < ELEVATED_YEAR_THRESHOLD:
         age_factor = 1.4  # Aging systems
     
     # HVAC service recency
@@ -248,7 +252,7 @@ def _get_winter_recommendations(multiplier: float, year_built: Optional[int]) ->
         ])
     
     # Age-specific recommendations
-    if year_built and year_built < 1960:
+    if year_built and year_built < CRITICAL_YEAR_THRESHOLD:
         recommendations.append('Consider HVAC system replacement (ROI: avoid repeat fines)')
     
     return recommendations

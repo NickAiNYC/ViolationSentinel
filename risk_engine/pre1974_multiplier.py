@@ -11,6 +11,17 @@ Source: NYC HPD violation patterns + DOB year_built correlation
 
 from typing import Dict, Tuple, Optional
 
+# Constants for building year validation and thresholds
+MIN_VALID_YEAR = 1800  # Minimum valid construction year
+MAX_VALID_YEAR = 2025  # Maximum valid construction year (current year + buffer)
+CRITICAL_YEAR_THRESHOLD = 1960  # Pre-1960 = critical risk
+ELEVATED_YEAR_THRESHOLD = 1974  # Pre-1974 = elevated risk
+
+# Risk multipliers
+CRITICAL_RISK_MULTIPLIER = 3.8  # Pre-1960 buildings
+ELEVATED_RISK_MULTIPLIER = 2.5  # 1960-1973 buildings
+BASELINE_RISK_MULTIPLIER = 1.0  # 1974+ buildings
+
 
 def pre1974_risk_multiplier(violation_data: Dict) -> Tuple[float, str]:
     """
@@ -38,16 +49,16 @@ def pre1974_risk_multiplier(violation_data: Dict) -> Tuple[float, str]:
     year_built = violation_data.get('year_built', 2000)
     
     # Validate year_built is reasonable
-    if year_built is None or year_built < 1800 or year_built > 2025:
+    if year_built is None or year_built < MIN_VALID_YEAR or year_built > MAX_VALID_YEAR:
         # Default to modern if invalid
-        return 1.0, "Unknown construction year (baseline risk)"
+        return BASELINE_RISK_MULTIPLIER, "Unknown construction year (baseline risk)"
     
-    if year_built >= 1974:
-        return 1.0, "Modern construction"
-    elif year_built >= 1960:
-        return 2.5, "Rent-stabilized era (elevated risk)"
+    if year_built >= ELEVATED_YEAR_THRESHOLD:
+        return BASELINE_RISK_MULTIPLIER, "Modern construction"
+    elif year_built >= CRITICAL_YEAR_THRESHOLD:
+        return ELEVATED_RISK_MULTIPLIER, "Rent-stabilized era (elevated risk)"
     else:
-        return 3.8, "Pre-1960 (critical risk - lead/heat)"
+        return CRITICAL_RISK_MULTIPLIER, "Pre-1960 (critical risk - lead/heat)"
 
 
 def get_building_era_risk(year_built: Optional[int]) -> Dict:
@@ -65,26 +76,26 @@ def get_building_era_risk(year_built: Optional[int]) -> Dict:
         - risk_factors: List of specific risk factors
         - action_items: Recommended actions
     """
-    if year_built is None or year_built < 1800 or year_built > 2025:
+    if year_built is None or year_built < MIN_VALID_YEAR or year_built > MAX_VALID_YEAR:
         return {
-            'multiplier': 1.0,
+            'multiplier': BASELINE_RISK_MULTIPLIER,
             'era': 'Unknown',
             'explanation': 'Unknown construction year - baseline risk assumed',
             'risk_factors': ['Missing building data'],
             'action_items': ['Verify building records with DOB']
         }
     
-    if year_built >= 1974:
+    if year_built >= ELEVATED_YEAR_THRESHOLD:
         return {
-            'multiplier': 1.0,
+            'multiplier': BASELINE_RISK_MULTIPLIER,
             'era': 'Modern (1974+)',
             'explanation': 'Post-1974 construction with modern building codes',
             'risk_factors': [],
             'action_items': ['Standard maintenance schedule']
         }
-    elif year_built >= 1960:
+    elif year_built >= CRITICAL_YEAR_THRESHOLD:
         return {
-            'multiplier': 2.5,
+            'multiplier': ELEVATED_RISK_MULTIPLIER,
             'era': 'Rent-Stabilized Era (1960-1973)',
             'explanation': 'Pre-1974 rent-stabilized building with elevated violation risk',
             'risk_factors': [
@@ -102,7 +113,7 @@ def get_building_era_risk(year_built: Optional[int]) -> Dict:
         }
     else:
         return {
-            'multiplier': 3.8,
+            'multiplier': CRITICAL_RISK_MULTIPLIER,
             'era': 'Pre-1960 Legacy',
             'explanation': 'Pre-1960 building with critical risk factors',
             'risk_factors': [
@@ -133,9 +144,9 @@ def is_pre1974_building(year_built: Optional[int]) -> bool:
     Returns:
         True if pre-1974, False otherwise
     """
-    if year_built is None or year_built < 1800 or year_built > 2025:
+    if year_built is None or year_built < MIN_VALID_YEAR or year_built > MAX_VALID_YEAR:
         return False
-    return year_built < 1974
+    return year_built < ELEVATED_YEAR_THRESHOLD
 
 
 def calculate_portfolio_pre1974_stats(buildings: list) -> Dict:
@@ -163,15 +174,15 @@ def calculate_portfolio_pre1974_stats(buildings: list) -> Dict:
     
     for building in buildings:
         year_built = building.get('year_built')
-        if year_built and year_built < 1974:
+        if year_built and year_built < ELEVATED_YEAR_THRESHOLD:
             pre1974_count += 1
-            if year_built < 1960:
+            if year_built < CRITICAL_YEAR_THRESHOLD:
                 pre1960_count += 1
-                total_multiplier += 3.8
+                total_multiplier += CRITICAL_RISK_MULTIPLIER
             else:
-                total_multiplier += 2.5
+                total_multiplier += ELEVATED_RISK_MULTIPLIER
         else:
-            total_multiplier += 1.0
+            total_multiplier += BASELINE_RISK_MULTIPLIER
     
     total = len(buildings)
     pre1974_pct = (pre1974_count / total * 100) if total > 0 else 0

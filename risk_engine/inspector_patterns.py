@@ -214,8 +214,10 @@ def calculate_combined_inspector_risk(buildings: list) -> Dict:
     total = len(buildings)
     avg_multiplier = total_multiplier / total if total > 0 else 1.0
     
-    # Find most common district
-    highest_risk_district = max(district_counts.items(), key=lambda x: x[1])[0] if district_counts else None
+    # Find most common district (handle empty case)
+    highest_risk_district = None
+    if district_counts:
+        highest_risk_district = max(district_counts.items(), key=lambda x: x[1])[0]
     
     return {
         'total_buildings': total,
