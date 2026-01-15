@@ -19,7 +19,7 @@ from risk_engine.pre1974_multiplier import (
 from risk_engine.inspector_patterns import inspector_risk_multiplier, get_district_hotspot
 from risk_engine.seasonal_heat_model import heat_violation_forecast, is_heat_season
 from risk_engine.peer_benchmark import peer_percentile, calculate_portfolio_peer_ranking
-from streamlit.components.pre1974_banner import (
+from vs_components.components.pre1974_banner import (
     show_pre1974_banner,
     show_pre1974_stats,
     show_winter_heat_alert,

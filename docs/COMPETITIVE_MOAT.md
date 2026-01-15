@@ -20,7 +20,7 @@ This document outlines the competitive advantages built into ViolationSentinel t
 
 **Files:**
 - `risk_engine/pre1974_multiplier.py` - Core implementation
-- `streamlit/components/pre1974_banner.py` - UI components
+- `vs_components/components/pre1974_banner.py` - UI components
 - `tests/test_pre1974_risk.py` - Test coverage
 
 **Usage:**
