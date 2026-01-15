@@ -22,7 +22,7 @@ from tenacity import (
     wait_exponential,
     retry_if_exception_type,
 )
-from circuitbreaker import circuit
+from circuitbreaker import circuit, CircuitBreakerError
 from cachetools import TTLCache
 from prometheus_client import Counter, Histogram, Gauge
 import redis.asyncio as redis
@@ -369,7 +369,7 @@ class NYCDataClient:
                     )
                     raise NYCDataError(f"HTTP {response.status}: {error_text[:200]}")
         
-        except circuit.CircuitBreakerError:
+        except CircuitBreakerError:
             CIRCUIT_BREAKER_STATE.labels(endpoint=url).set(1)
             self._stats['circuit_breaks'] += 1
             ERROR_COUNT.labels(error_type='circuit_breaker').inc()
