@@ -62,24 +62,24 @@ class Property(Base, TimestampMixin, SoftDeleteMixin):
     )
     
     # Metadata
-    metadata: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    extra_metadata: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
     
     # Relationships
     violations: Mapped[List["Violation"]] = relationship(
         "Violation",
-        back_populates="property",
+        back_populates="property_rel",
         cascade="all, delete-orphan"
     )
     
     risk_scores: Mapped[List["RiskScore"]] = relationship(
         "RiskScore",
-        back_populates="property",
+        back_populates="property_rel",
         cascade="all, delete-orphan"
     )
     
     alerts: Mapped[List["Alert"]] = relationship(
         "Alert",
-        back_populates="property",
+        back_populates="property_rel",
         cascade="all, delete-orphan"
     )
     

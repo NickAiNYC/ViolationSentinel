@@ -94,7 +94,7 @@ class AlertRule(Base, TimestampMixin):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     
     # Metadata
-    metadata: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    extra_metadata: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
     
     # Relationships
     alerts: Mapped[list["Alert"]] = relationship(
@@ -198,7 +198,7 @@ class Alert(Base, TimestampMixin):
     context: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
     
     # Relationships
-    property: Mapped[Optional["Property"]] = relationship(
+    property_rel: Mapped[Optional["Property"]] = relationship(
         "Property",
         back_populates="alerts"
     )

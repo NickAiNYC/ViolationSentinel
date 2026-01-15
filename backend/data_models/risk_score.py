@@ -88,7 +88,7 @@ class RiskScore(Base, TimestampMixin):
     forecast_180d: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     
     # Relationships
-    property: Mapped["Property"] = relationship(
+    property_rel: Mapped["Property"] = relationship(
         "Property",
         back_populates="risk_scores"
     )
@@ -102,8 +102,7 @@ class RiskScore(Base, TimestampMixin):
     def __repr__(self) -> str:
         return f"<RiskScore(id={self.id}, property_id={self.property_id}, overall={self.overall_score:.2f}, trend={self.trend_direction})>"
     
-    @property
-    def risk_level(self) -> str:
+    def get_risk_level(self) -> str:
         """Categorize risk level"""
         if self.overall_score >= 80:
             return "CRITICAL"

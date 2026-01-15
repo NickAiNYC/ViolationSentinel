@@ -113,7 +113,7 @@ class Violation(Base, TimestampMixin):
     hash: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
     
     # Relationships
-    property: Mapped["Property"] = relationship(
+    property_rel: Mapped["Property"] = relationship(
         "Property",
         back_populates="violations"
     )
