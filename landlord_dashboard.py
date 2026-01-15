@@ -1,6 +1,7 @@
 """
 Landlord Dashboard - Comprehensive Property Violation Monitoring
 Integrates DOB, HPD, and 311 violations for property management.
+Real-time updates via WebSocket connection.
 """
 
 import streamlit as st
@@ -9,6 +10,8 @@ from datetime import datetime
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import json
+import os
 
 from dob_violations.dob_engine import DOBViolationMonitor
 # Note: Would need to import existing HPD/311 modules here
@@ -20,7 +23,27 @@ st.set_page_config(
     layout="wide"
 )
 
-# Custom CSS
+# Initialize session state
+if 'dob_monitor' not in st.session_state:
+    st.session_state.dob_monitor = DOBViolationMonitor()
+if 'portfolio' not in st.session_state:
+    st.session_state.portfolio = []
+if 'ws_connected' not in st.session_state:
+    st.session_state.ws_connected = False
+if 'real_time_updates' not in st.session_state:
+    st.session_state.real_time_updates = []
+if 'last_update_time' not in st.session_state:
+    st.session_state.last_update_time = datetime.now()
+if 'debug_mode' not in st.session_state:
+    st.session_state.debug_mode = os.getenv('DEBUG_MODE', 'false').lower() == 'true'
+
+# WebSocket configuration
+WS_HOST = os.getenv('WEBSOCKET_HOST', 'localhost')
+WS_PORT = os.getenv('WEBSOCKET_PORT', '8765')
+WS_URL = f"ws://{WS_HOST}:{WS_PORT}"
+JWT_TOKEN = os.getenv('JWT_TOKEN', '')  # Should be set in production
+
+# Custom CSS with connection status indicator and animations
 st.markdown("""
 <style>
     .main-header {
@@ -41,18 +64,364 @@ st.markdown("""
         margin-bottom: 1rem;
         background: white;
     }
+    
+    /* Connection Status Indicator */
+    .connection-status {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        margin-left: 1rem;
+    }
+    .status-connected {
+        background-color: #D1FAE5;
+        color: #065F46;
+    }
+    .status-reconnecting {
+        background-color: #FEF3C7;
+        color: #92400E;
+    }
+    .status-disconnected {
+        background-color: #FEE2E2;
+        color: #991B1B;
+    }
+    .status-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 0.5rem;
+        display: inline-block;
+    }
+    .dot-green {
+        background-color: #10B981;
+        box-shadow: 0 0 10px #10B981;
+        animation: pulse-green 2s infinite;
+    }
+    .dot-yellow {
+        background-color: #F59E0B;
+        box-shadow: 0 0 10px #F59E0B;
+        animation: pulse-yellow 1s infinite;
+    }
+    .dot-red {
+        background-color: #EF4444;
+        box-shadow: 0 0 10px #EF4444;
+    }
+    
+    @keyframes pulse-green {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+    @keyframes pulse-yellow {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.3; }
+    }
+    
+    /* Activity Feed */
+    .activity-feed {
+        max-height: 400px;
+        overflow-y: auto;
+        border: 1px solid #E5E7EB;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        background: #F9FAFB;
+    }
+    .activity-item {
+        padding: 0.75rem;
+        border-left: 3px solid #3B82F6;
+        background: white;
+        margin-bottom: 0.5rem;
+        border-radius: 0.25rem;
+        animation: slideIn 0.3s ease-out;
+    }
+    .activity-item.critical {
+        border-left-color: #DC2626;
+        background: #FEF2F2;
+    }
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+    
+    /* Badge Animations */
+    .violation-badge {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        animation: fadeIn 0.5s ease-out;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    /* Last Updated */
+    .last-updated {
+        font-size: 0.875rem;
+        color: #6B7280;
+        font-style: italic;
+    }
+    
+    /* Toast Notification */
+    .toast-notification {
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        background: white;
+        border-left: 4px solid #3B82F6;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        padding: 1rem;
+        border-radius: 0.5rem;
+        z-index: 9999;
+        animation: slideInRight 0.3s ease-out;
+    }
+    .toast-notification.critical {
+        border-left-color: #DC2626;
+        background: #FEF2F2;
+    }
+    @keyframes slideInRight {
+        from {
+            opacity: 0;
+            transform: translateX(100px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# Header
-st.markdown("<h1 class='main-header'>🏢 ViolationSentinel - Landlord Dashboard</h1>", unsafe_allow_html=True)
-st.markdown("### Comprehensive NYC Property Violation Monitoring for Landlords & Property Managers")
+# WebSocket JavaScript Component
+websocket_component = """
+<script>
+let ws = null;
+let reconnectAttempts = 0;
+const maxReconnectAttempts = 10;
+const baseDelay = 1000;
 
-# Initialize session state
-if 'dob_monitor' not in st.session_state:
-    st.session_state.dob_monitor = DOBViolationMonitor()
-if 'portfolio' not in st.session_state:
-    st.session_state.portfolio = []
+function getConnectionStatus() {
+    if (!ws) return 'disconnected';
+    switch(ws.readyState) {
+        case WebSocket.CONNECTING: return 'connecting';
+        case WebSocket.OPEN: return 'connected';
+        case WebSocket.CLOSING: return 'disconnecting';
+        case WebSocket.CLOSED: return 'disconnected';
+        default: return 'disconnected';
+    }
+}
+
+function updateConnectionUI(status) {
+    const statusElement = document.getElementById('ws-status');
+    if (!statusElement) return;
+    
+    let statusClass, dotClass, statusText;
+    
+    switch(status) {
+        case 'connected':
+            statusClass = 'status-connected';
+            dotClass = 'dot-green';
+            statusText = 'Connected';
+            break;
+        case 'connecting':
+        case 'reconnecting':
+            statusClass = 'status-reconnecting';
+            dotClass = 'dot-yellow';
+            statusText = status === 'reconnecting' ? 'Reconnecting...' : 'Connecting...';
+            break;
+        default:
+            statusClass = 'status-disconnected';
+            dotClass = 'dot-red';
+            statusText = 'Disconnected';
+    }
+    
+    statusElement.className = 'connection-status ' + statusClass;
+    statusElement.innerHTML = '<span class="status-dot ' + dotClass + '"></span>' + statusText;
+}
+
+function connectWebSocket() {
+    const wsUrl = '""" + WS_URL + """';
+    const jwtToken = '""" + JWT_TOKEN + """';
+    const properties = """ + json.dumps([p['bbl'] for p in st.session_state.portfolio]) + """;
+    const debugMode = """ + json.dumps(st.session_state.debug_mode) + """;
+    
+    try {
+        updateConnectionUI('connecting');
+        ws = new WebSocket(wsUrl);
+        
+        ws.onopen = function() {
+            console.log('WebSocket connected');
+            updateConnectionUI('connected');
+            reconnectAttempts = 0;
+            
+            // Authenticate
+            if (jwtToken) {
+                ws.send(JSON.stringify({
+                    type: 'AUTHENTICATE',
+                    token: jwtToken
+                }));
+            }
+            
+            // Subscribe to all properties
+            properties.forEach(function(bbl) {
+                ws.send(JSON.stringify({
+                    type: 'SUBSCRIBE',
+                    property_id: bbl
+                }));
+                if (debugMode) {
+                    console.log('Subscribed to property:', bbl);
+                }
+            });
+        };
+        
+        ws.onmessage = function(event) {
+            const message = JSON.parse(event.data);
+            
+            if (debugMode) {
+                console.log('WebSocket message:', message);
+            }
+            
+            // Handle different message types
+            if (message.type === 'VIOLATION_UPDATE') {
+                handleViolationUpdate(message);
+            } else if (message.type === 'PING') {
+                ws.send(JSON.stringify({type: 'PONG'}));
+            }
+        };
+        
+        ws.onerror = function(error) {
+            console.error('WebSocket error:', error);
+            updateConnectionUI('disconnected');
+        };
+        
+        ws.onclose = function() {
+            console.log('WebSocket closed');
+            updateConnectionUI('disconnected');
+            attemptReconnect();
+        };
+        
+    } catch (error) {
+        console.error('Failed to create WebSocket:', error);
+        updateConnectionUI('disconnected');
+        attemptReconnect();
+    }
+}
+
+function attemptReconnect() {
+    if (reconnectAttempts >= maxReconnectAttempts) {
+        console.log('Max reconnect attempts reached');
+        return;
+    }
+    
+    reconnectAttempts++;
+    const delay = Math.min(baseDelay * Math.pow(2, reconnectAttempts), 30000);
+    
+    updateConnectionUI('reconnecting');
+    console.log('Reconnecting in', delay, 'ms (attempt', reconnectAttempts, ')');
+    
+    setTimeout(connectWebSocket, delay);
+}
+
+function handleViolationUpdate(message) {
+    const debugMode = """ + json.dumps(st.session_state.debug_mode) + """;
+    
+    // Play sound for critical violations
+    if (message.severity === 'critical') {
+        playAlertSound();
+    }
+    
+    // Show toast notification
+    showToast(message);
+    
+    // Trigger Streamlit rerun to update UI
+    if (window.parent && window.parent.postMessage) {
+        window.parent.postMessage({
+            type: 'streamlit:setComponentValue',
+            value: {
+                update: message,
+                timestamp: new Date().toISOString()
+            }
+        }, '*');
+    }
+}
+
+function showToast(message) {
+    const toast = document.createElement('div');
+    toast.className = 'toast-notification' + (message.severity === 'critical' ? ' critical' : '');
+    toast.innerHTML = `
+        <strong>${message.property_id}</strong><br>
+        ${message.type}: ${message.count || 0} violations
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(function() {
+        toast.style.animation = 'slideInRight 0.3s ease-out reverse';
+        setTimeout(function() {
+            document.body.removeChild(toast);
+        }, 300);
+    }, 5000);
+}
+
+function playAlertSound() {
+    // Create a simple beep using Web Audio API
+    try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = 800;
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.5);
+    } catch (error) {
+        console.error('Failed to play alert sound:', error);
+    }
+}
+
+// Initialize WebSocket on page load
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', connectWebSocket);
+} else {
+    connectWebSocket();
+}
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', function() {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.close();
+    }
+});
+</script>
+"""
+
+# Inject WebSocket component if portfolio exists
+if st.session_state.portfolio:
+    st.components.v1.html(websocket_component, height=0)
+
+# Header with connection status
+header_col1, header_col2 = st.columns([3, 1])
+with header_col1:
+    st.markdown("<h1 class='main-header'>🏢 ViolationSentinel - Landlord Dashboard</h1>", unsafe_allow_html=True)
+with header_col2:
+    st.markdown('<div id="ws-status" class="connection-status status-disconnected"><span class="status-dot dot-red"></span>Disconnected</div>', unsafe_allow_html=True)
+
+st.markdown("### Comprehensive NYC Property Violation Monitoring for Landlords & Property Managers")
 
 # Sidebar - Property Management
 with st.sidebar:
@@ -85,6 +454,27 @@ with st.sidebar:
         st.subheader(f"Portfolio: {len(st.session_state.portfolio)} Properties")
         for prop in st.session_state.portfolio:
             st.write(f"• {prop['name']} ({prop['units']} units)")
+    
+    st.divider()
+    
+    # Settings
+    st.subheader("⚙️ Settings")
+    
+    # Debug mode toggle
+    debug_toggle = st.checkbox(
+        "Enable Debug Mode",
+        value=st.session_state.debug_mode,
+        help="Log WebSocket messages to browser console"
+    )
+    if debug_toggle != st.session_state.debug_mode:
+        st.session_state.debug_mode = debug_toggle
+        st.rerun()
+    
+    # Real-time updates toggle
+    st.info("✅ Real-time updates enabled via WebSocket")
+    
+    # Connection settings display
+    st.text(f"WebSocket: {WS_URL}")
     
     st.divider()
     
@@ -160,12 +550,44 @@ else:
         
         st.divider()
         
+        # Real-Time Activity Feed
+        st.subheader("🔴 Real-Time Activity Feed")
+        
+        with st.container():
+            if st.session_state.real_time_updates:
+                st.markdown('<div class="activity-feed">', unsafe_allow_html=True)
+                
+                # Show last 10 updates
+                for update in st.session_state.real_time_updates[-10:]:
+                    critical_class = ' critical' if update.get('severity') == 'critical' else ''
+                    st.markdown(f"""
+                    <div class="activity-item{critical_class}">
+                        <strong>{update.get('property_id', 'Unknown')}</strong> - {update.get('type', 'Update')}
+                        <br>
+                        <small>{update.get('timestamp', datetime.now().strftime('%Y-%m-%d %H:%M:%S'))}</small>
+                        <br>
+                        {update.get('message', f"Violations: {update.get('count', 0)}")}
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                st.markdown('</div>', unsafe_allow_html=True)
+            else:
+                st.info("Waiting for real-time updates... Connect WebSocket to see live activity.")
+            
+            # Last updated timestamp
+            st.markdown(
+                f'<div class="last-updated">Last updated: {st.session_state.last_update_time.strftime("%Y-%m-%d %H:%M:%S")}</div>',
+                unsafe_allow_html=True
+            )
+        
+        st.divider()
+        
         # Property Details
         st.subheader("Property Violation Details")
         
         for prop_result in results['properties']:
             with st.container():
-                col1, col2, col3 = st.columns([2, 1, 1])
+                col1, col2, col3, col4 = st.columns([2, 1, 1, 1])
                 
                 with col1:
                     st.markdown(f"**{prop_result['property_name']}** ({prop_result['bbl']})")
@@ -173,12 +595,23 @@ else:
                 with col2:
                     violations = prop_result['summary']['total']
                     open_vios = prop_result['summary']['open']
-                    st.write(f"Violations: {violations} ({open_vios} open)")
+                    st.markdown(
+                        f'<span class="violation-badge" style="background:#3B82F6; color:white;">Total: {violations}</span> '
+                        f'<span class="violation-badge" style="background:#EF4444; color:white;">Open: {open_vios}</span>',
+                        unsafe_allow_html=True
+                    )
                 
                 with col3:
                     risk = prop_result['risk_level']
                     risk_class = f"risk-{risk.lower()}" if risk != "CLEAN" else "risk-clean"
                     st.markdown(f"<div class='{risk_class}'>Risk: {risk}</div>", unsafe_allow_html=True)
+                
+                with col4:
+                    # Auto-refresh indicator
+                    st.markdown(
+                        '<span style="font-size:0.75rem; color:#6B7280;">🔄 Live</span>',
+                        unsafe_allow_html=True
+                    )
                 
                 # Show violation breakdown if any
                 if prop_result['violations']:
@@ -243,5 +676,12 @@ else:
 
 # Footer
 st.divider()
-st.caption("ViolationSentinel v1.0 • Last updated: " + datetime.now().strftime('%Y-%m-%d %H:%M'))
-st.caption("Monitoring: DOB Violations • HPD Violations • 311 Complaints")
+col1, col2 = st.columns([2, 1])
+with col1:
+    st.caption("ViolationSentinel v1.0 • Last updated: " + datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+    st.caption("Monitoring: DOB Violations • HPD Violations • 311 Complaints")
+with col2:
+    if st.session_state.portfolio:
+        st.caption(f"🔄 Real-time monitoring {len(st.session_state.portfolio)} properties")
+    else:
+        st.caption("Add properties to enable real-time monitoring")
