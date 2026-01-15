@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  # FastAPI Backend
+  api:
+    build: .
+    command: uvicorn backend.v1.api:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://user:password@postgres:5432/violation_sentinel
+      - REDIS_URL=redis://redis:6379/0
+      - NYC_OPEN_DATA_TOKEN=${NYC_OPEN_DATA_TOKEN}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+
+  # Streamlit Frontend
+  streamlit:
+    build: .
+    command: streamlit run streamlit/app.py --server.port 8501 --server.address 0.0.0.0
+    ports:
+      - "8501:8501"
+    environment:
+      - API_URL=http://api:8000
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  # Stripe Webhook Handler
+  webhook:
+    build: .
+    command: uvicorn stripe.webhook:app --host 0.0.0.0 --port 8001
+    ports:
+      - "8001:8001"
+    environment:
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+    restart: unless-stopped
+
+  # Postgres Database (optional - use Supabase in production)
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=violation_sentinel
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  # Redis (optional - for caching)
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  # Daily Cron Job (use external cron or GitHub Actions in production)
+  cron:
+    build: .
+    command: sh -c "while true; do python cron/daily_pipeline.py; sleep 86400; done"
+    environment:
+      - NYC_OPEN_DATA_TOKEN=${NYC_OPEN_DATA_TOKEN}
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
