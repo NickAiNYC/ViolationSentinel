@@ -711,28 +711,37 @@ class RiskPredictor:
         days_pred: float
     ) -> str:
         """Generate actionable recommendation based on risk assessment."""
+        # Format days prediction based on timeframe
+        if days_pred < 30:
+            time_desc = f"within {days_pred:.0f} days"
+        elif days_pred < 90:
+            time_desc = f"in ~{days_pred:.0f} days ({days_pred/30:.1f} months)"
+        else:
+            time_desc = f"in ~{days_pred/30:.1f} months"
+        
         if risk_level == 'CRITICAL':
             return (
                 f"IMMEDIATE ACTION REQUIRED: {critical_proba:.1%} probability of critical violation "
-                f"within {days_pred:.0f} days. Schedule emergency inspection and address all open violations."
+                f"{time_desc}. Schedule emergency inspection and address all open violations."
             )
         elif risk_level == 'HIGH':
             return (
                 f"High risk detected ({critical_proba:.1%} critical violation probability). "
-                "Schedule inspection within 7 days and review compliance status."
+                f"Next violation expected {time_desc}. Schedule inspection within 7 days and review compliance status."
             )
         elif risk_level == 'MEDIUM':
             return (
-                f"Moderate risk level. Next violation expected in ~{days_pred:.0f} days. "
+                f"Moderate risk level. Next violation expected {time_desc}. "
                 "Schedule routine inspection within 30 days."
             )
         elif risk_level == 'LOW':
             return (
-                "Low risk. Continue routine monitoring and maintain compliance protocols."
+                f"Low risk. Next violation not expected for {days_pred/30:.1f} months. "
+                "Continue routine monitoring and maintain compliance protocols."
             )
         else:  # MINIMAL
             return (
-                "Minimal risk detected. Property is in good standing. "
+                f"Minimal risk detected. Property is in good standing (next violation {time_desc}). "
                 "Continue standard quarterly inspections."
             )
     
