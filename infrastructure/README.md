@@ -2,11 +2,11 @@
 
 ## Overview
 
-Production-grade infrastructure utilities for ViolationSentinel including structured logging, request tracing, and observability.
+Production-grade infrastructure utilities for ViolationSentinel including structured logging, request tracing, caching, and observability.
 
-## Features
+## Modules
 
-### Structured Logging (`logging_config.py`)
+### 1. Structured Logging (`logging_config.py`)
 
 A comprehensive logging system with:
 
@@ -22,12 +22,31 @@ A comprehensive logging system with:
 ✅ **Performance decorators**: @log_execution_time  
 ✅ **Exception decorators**: @log_exceptions  
 
+### 2. Production-Ready Caching (`cache.py`)
+
+A comprehensive Redis caching layer with:
+
+✅ **Connection pooling** (max 50 connections)  
+✅ **Automatic serialization/deserialization** (JSON or pickle)  
+✅ **TTL support** (time-to-live for cache entries)  
+✅ **Cache invalidation** (by key, by pattern)  
+✅ **Automatic fallback** to in-memory cache if Redis unavailable  
+✅ **Async/await support** for non-blocking operations  
+✅ **Cache statistics** (hits, misses, hit rate)  
+✅ **LRU eviction policy** for memory cache  
+✅ **Compression** for large values (>1KB)  
+✅ **Batch operations** (mget, mset)  
+✅ **@cached decorator** for automatic function result caching  
+✅ **Cache warming** for frequently accessed data  
+✅ **Health check** method  
+✅ **Prometheus metrics** export  
+
 ## Installation
 
-Install the required dependency:
+Install the required dependencies:
 
 ```bash
-pip install python-json-logger>=2.0.0
+pip install python-json-logger>=2.0.0 redis>=5.0.0 cachetools>=5.3.0
 ```
 
 Or install from requirements.txt:
@@ -94,9 +113,56 @@ async def fetch_data(property_id: str):
     return result
 ```
 
+### 5. Initialize Cache Manager
+
+```python
+from infrastructure import CacheManager
+
+# With Redis
+cache = CacheManager(
+    redis_url="redis://localhost:6379/0",
+    max_connections=50,
+    enable_compression=True,
+)
+await cache.initialize()
+
+# Basic operations
+await cache.set("key", {"data": "value"}, ttl=300)
+value = await cache.get("key")
+await cache.delete("key")
+
+# Batch operations
+await cache.mset({"key1": "val1", "key2": "val2"}, ttl=600)
+results = await cache.mget(["key1", "key2"])
+
+# Get statistics
+stats = cache.get_stats()
+print(f"Hit rate: {stats['hit_rate']:.2%}")
+
+await cache.close()
+```
+
+### 6. Use @cached Decorator
+
+```python
+from infrastructure import CacheManager, cached
+
+cache_manager = CacheManager(redis_url="redis://localhost:6379")
+await cache_manager.initialize()
+
+@cached(ttl=600, key_prefix="api")
+async def expensive_function(param):
+    # Function result is automatically cached
+    result = await some_expensive_operation(param)
+    return result
+
+# Pass cache manager
+result = await expensive_function("value", _cache_manager=cache_manager)
+```
+
 ## Configuration
 
-### Environment Variables
+### Environment Variables (Logging)
 
 - `LOG_LEVEL`: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL). Default: `INFO`
 - `LOG_DIR`: Directory for log files. Default: `./logs`
@@ -419,12 +485,110 @@ find /var/log/app -name "*.log.*" -mtime +30 -delete
 
 ## Examples
 
+### Logging Examples
+
 See `example_logging_integration.py` for comprehensive usage examples including:
 - Request context tracking
 - Execution time logging
 - Exception logging
 - Structured metadata
 - Batch processing with logging
+
+### Cache Examples
+
+See `example_cache_usage.py` for comprehensive caching examples including:
+- Basic cache operations (get, set, delete, exists)
+- Batch operations (mget, mset)
+- Automatic compression for large values
+- Pattern-based cache clearing
+- @cached decorator usage
+- Cache warming
+- Health checks and statistics
+- Redis fallback behavior
+- Different serialization modes
+
+## Cache API Reference
+
+### `CacheManager`
+
+Production-ready cache manager class.
+
+**Constructor Parameters:**
+- `redis_url` (str, optional): Redis connection URL
+- `max_connections` (int): Maximum Redis connections (default: 50)
+- `memory_cache_size` (int): In-memory cache size (default: 1000)
+- `memory_cache_ttl` (int): In-memory cache TTL in seconds (default: 300)
+- `enable_compression` (bool): Enable compression for values >1KB (default: True)
+- `serialization` (str): Serialization method, 'json' or 'pickle' (default: 'json')
+
+**Methods:**
+
+#### `async initialize()`
+Initialize Redis connection.
+
+#### `async close()`
+Close Redis connection and cleanup.
+
+#### `async get(key: str) -> Optional[Any]`
+Get value from cache. Returns None if not found.
+
+#### `async set(key: str, value: Any, ttl: Optional[int] = None) -> bool`
+Set value in cache with optional TTL (seconds).
+
+#### `async delete(key: str) -> bool`
+Delete value from cache.
+
+#### `async exists(key: str) -> bool`
+Check if key exists in cache.
+
+#### `async clear(pattern: Optional[str] = None) -> int`
+Clear cache entries. If pattern provided, clears matching keys (e.g., 'user:*').
+
+#### `async mget(keys: List[str]) -> Dict[str, Any]`
+Get multiple values from cache in one operation.
+
+#### `async mset(mapping: Dict[str, Any], ttl: Optional[int] = None) -> bool`
+Set multiple values in cache in one operation.
+
+#### `async health_check() -> Dict[str, Any]`
+Perform health check on cache system.
+
+#### `get_stats() -> Dict[str, Any]`
+Get cache statistics including hits, misses, and hit rate.
+
+#### `async warm_cache(data_loader: Callable) -> int`
+Warm cache with frequently accessed data.
+
+### `@cached` Decorator
+
+Decorator for automatic function result caching.
+
+**Parameters:**
+- `ttl` (int): Time-to-live in seconds (default: 300)
+- `key_prefix` (str): Prefix for cache keys (default: "")
+
+**Usage:**
+```python
+@cached(ttl=600, key_prefix="api")
+async def expensive_function(param):
+    return await fetch_data(param)
+
+# Must pass _cache_manager
+result = await expensive_function("value", _cache_manager=cache_manager)
+```
+
+## Best Practices
+
+### Caching
+
+1. **Use appropriate TTLs**: Balance freshness with cache hit rates
+2. **Enable compression**: For data > 1KB to save memory
+3. **Use batch operations**: mget/mset for multiple keys
+4. **Monitor hit rates**: Aim for >80% hit rate
+5. **Warm cache**: Preload frequently accessed data
+6. **Handle Redis failures**: Client automatically falls back to memory
+7. **Use key prefixes**: Organize cache keys (e.g., 'user:', 'property:')
+8. **Pattern-based clearing**: Clear related keys together
 
 ## License
 
