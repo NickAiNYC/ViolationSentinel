@@ -66,6 +66,17 @@ class Settings(BaseSettings):
     MODEL_VERSION_PREFIX: str = "v"
     MODEL_DRIFT_THRESHOLD: float = 0.15
     
+    # Risk Scoring Configuration
+    RISK_SEVERITY_WEIGHT_CLASS_C: float = 10.0  # Immediately hazardous
+    RISK_SEVERITY_WEIGHT_CLASS_B: float = 5.0   # Hazardous
+    RISK_SEVERITY_WEIGHT_CLASS_A: float = 2.0   # Non-hazardous
+    RISK_SEVERITY_WEIGHT_UNKNOWN: float = 1.0   # Unknown severity
+    RISK_TIME_DECAY_HALF_LIFE_DAYS: int = 180   # 6 months half-life
+    RISK_ESCALATION_WINDOW_DAYS: int = 90       # Escalation detection window
+    RISK_ESCALATION_THRESHOLD_PCT: float = 20.0  # Escalation threshold percentage
+    RISK_MIN_VIOLATIONS_FOR_ESCALATION: int = 3  # Minimum violations needed per window
+    RISK_SCORING_TIMEOUT_MS: int = 5000          # Maximum scoring duration in milliseconds
+    
     # Monitoring
     PROMETHEUS_ENABLED: bool = True
     PROMETHEUS_PORT: int = 9090
