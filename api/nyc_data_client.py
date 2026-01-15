@@ -141,6 +141,12 @@ class NYCDataClient:
     COMPLAINTS_311_ENDPOINT = "https://data.cityofnewyork.us/resource/erm2-nwe9.json"
     PERMITS_ENDPOINT = "https://data.cityofnewyork.us/resource/ipu4-2q9a.json"
     
+    # Default field names for ordering
+    DOB_ORDER_FIELD = "issue_date"
+    HPD_ORDER_FIELD = "inspectiondate"
+    COMPLAINTS_311_ORDER_FIELD = "created_date"
+    PERMITS_ORDER_FIELD = "filing_date"
+    
     def __init__(
         self,
         app_token: Optional[str] = None,
@@ -458,7 +464,7 @@ class NYCDataClient:
         params = {
             'bbl': str(bbl),
             '$limit': limit,
-            '$order': 'issue_date DESC',
+            '$order': f'{self.DOB_ORDER_FIELD} DESC',
         }
         
         return await self._fetch_with_cache(
@@ -493,7 +499,7 @@ class NYCDataClient:
         params = {
             'bbl': str(bbl),
             '$limit': limit,
-            '$order': 'inspectiondate DESC',
+            '$order': f'{self.HPD_ORDER_FIELD} DESC',
         }
         
         return await self._fetch_with_cache(
@@ -509,6 +515,7 @@ class NYCDataClient:
         days: int = 30,
         limit: int = 1000,
         use_cache: bool = True,
+        as_of_date: Optional[datetime] = None,
     ) -> List[Dict]:
         """
         Fetch 311 complaints for a property within a time window.
@@ -518,6 +525,7 @@ class NYCDataClient:
             days: Number of days to look back
             limit: Maximum number of records to return
             use_cache: Whether to use caching
+            as_of_date: Date to calculate lookback from (defaults to now)
         
         Returns:
             List of 311 complaint records
@@ -527,13 +535,16 @@ class NYCDataClient:
             RateLimitError: When rate limit is exceeded
             CircuitBreakerOpenError: When circuit breaker is open
         """
-        cutoff_date = (datetime.now() - timedelta(days=days)).isoformat()
+        if as_of_date is None:
+            as_of_date = datetime.now()
+        
+        cutoff_date = (as_of_date - timedelta(days=days)).isoformat()
         
         params = {
             'bbl': str(bbl),
-            '$where': f"created_date >= '{cutoff_date}'",
+            '$where': f"{self.COMPLAINTS_311_ORDER_FIELD} >= '{cutoff_date}'",
             '$limit': limit,
-            '$order': 'created_date DESC',
+            '$order': f'{self.COMPLAINTS_311_ORDER_FIELD} DESC',
         }
         
         return await self._fetch_with_cache(
@@ -552,6 +563,10 @@ class NYCDataClient:
         """
         Fetch building permits for a property.
         
+        Note: The permits API may use different identifiers. This method
+        attempts to query by BBL, but results may vary. For best results,
+        use the Building Identification Number (BIN) if available.
+        
         Args:
             bbl: Borough-Block-Lot identifier (10 digits)
             limit: Maximum number of records to return
@@ -566,9 +581,9 @@ class NYCDataClient:
             CircuitBreakerOpenError: When circuit breaker is open
         """
         params = {
-            'bin': str(bbl),  # Permits use BIN (Building Identification Number)
+            'bbl': str(bbl),  # Try BBL first
             '$limit': limit,
-            '$order': 'filing_date DESC',
+            '$order': f'{self.PERMITS_ORDER_FIELD} DESC',
         }
         
         return await self._fetch_with_cache(
@@ -616,53 +631,43 @@ class NYCDataClient:
         Raises:
             NYCDataError: On critical errors
         """
-        results = {}
-        tasks = []
+        # Build all tasks for concurrent execution
+        all_tasks = []
+        task_metadata = []
         
         for bbl in bbls:
-            bbl_tasks = []
-            
             if include_dob:
-                bbl_tasks.append(('dob_violations', self.get_dob_violations(bbl, use_cache=use_cache)))
+                all_tasks.append(self.get_dob_violations(bbl, use_cache=use_cache))
+                task_metadata.append((bbl, 'dob_violations'))
             
             if include_hpd:
-                bbl_tasks.append(('hpd_violations', self.get_hpd_violations(bbl, use_cache=use_cache)))
+                all_tasks.append(self.get_hpd_violations(bbl, use_cache=use_cache))
+                task_metadata.append((bbl, 'hpd_violations'))
             
             if include_311:
-                bbl_tasks.append(('311_complaints', self.get_311_complaints(bbl, days=days_311, use_cache=use_cache)))
+                all_tasks.append(self.get_311_complaints(bbl, days=days_311, use_cache=use_cache))
+                task_metadata.append((bbl, '311_complaints'))
             
             if include_permits:
-                bbl_tasks.append(('permits', self.get_permits(bbl, use_cache=use_cache)))
-            
-            tasks.append((bbl, bbl_tasks))
+                all_tasks.append(self.get_permits(bbl, use_cache=use_cache))
+                task_metadata.append((bbl, 'permits'))
         
         # Execute all tasks concurrently
-        for bbl, bbl_tasks in tasks:
-            results[bbl] = {}
-            
-            # Gather all tasks for this BBL
-            task_coros = [task for _, task in bbl_tasks]
-            task_names = [name for name, _ in bbl_tasks]
-            
-            try:
-                task_results = await asyncio.gather(*task_coros, return_exceptions=True)
-                
-                for name, result in zip(task_names, task_results):
-                    if isinstance(result, Exception):
-                        logger.error(f"Error fetching {name} for BBL {bbl}: {result}")
-                        results[bbl][name] = []
-                    else:
-                        results[bbl][name] = result
-            
-            except Exception as e:
-                logger.error(f"Batch fetch error for BBL {bbl}: {e}")
-                # Initialize with empty lists
-                for name in task_names:
-                    results[bbl][name] = []
+        results_list = await asyncio.gather(*all_tasks, return_exceptions=True)
+        
+        # Organize results by BBL
+        results = {bbl: {} for bbl in bbls}
+        
+        for (bbl, data_type), result in zip(task_metadata, results_list):
+            if isinstance(result, Exception):
+                logger.error(f"Error fetching {data_type} for BBL {bbl}: {result}")
+                results[bbl][data_type] = []
+            else:
+                results[bbl][data_type] = result
         
         logger.info(
             f"Batch fetch completed for {len(bbls)} properties",
-            extra={'bbls_count': len(bbls)}
+            extra={'bbls_count': len(bbls), 'total_tasks': len(all_tasks)}
         )
         
         return results
