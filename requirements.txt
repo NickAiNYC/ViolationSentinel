@@ -41,3 +41,6 @@ redis>=5.0.0
 prometheus-client>=0.19.0
 circuitbreaker>=1.4.0
 cachetools>=5.3.0
+
+# Logging - Production-Grade Structured Logging
+python-json-logger>=2.0.0
