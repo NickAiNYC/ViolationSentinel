@@ -13,6 +13,10 @@ def home():
         "docs": "/docs"
     }
 
+@app.get("/health")
+def health():
+    return {"status": "healthy"}
+
 @app.get("/properties")
 def get_properties(
     bbl: str = None,
