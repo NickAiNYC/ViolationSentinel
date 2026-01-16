@@ -4,13 +4,13 @@ echo "Starting ViolationSentinel Services..."
 
 # Start FastAPI Backend
 echo "Starting FastAPI backend on port 8000..."
-uvicorn simple_api:app --host 0.0.0.0 --port 8000 &
+uvicorn simple_api:app --host 0.0.0.0 --port 8000 --log-level info &
 FASTAPI_PID=$!
 echo "FastAPI started with PID: $FASTAPI_PID"
 
 # Start Streamlit Dashboard
 echo "Starting Streamlit dashboard on port 8501..."
-streamlit run landlord_dashboard.py --server.port 8501 --server.address 0.0.0.0 &
+streamlit run landlord_dashboard.py --server.port 8501 --server.address 0.0.0.0 --server.headless true --browser.gatherUsageStats false &
 STREAMLIT_PID=$!
 echo "Streamlit started with PID: $STREAMLIT_PID"
 
