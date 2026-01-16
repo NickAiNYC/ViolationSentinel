@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: violationsentinel-celery-worker
+  labels:
+    app: violationsentinel
+    component: celery-worker
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: violationsentinel
+      component: celery-worker
+  template:
+    metadata:
+      labels:
+        app: violationsentinel
+        component: celery-worker
+    spec:
+      containers:
+      - name: celery-worker
+        image: violationsentinel/api:latest
+        command: ["celery", "-A", "app.celery_worker", "worker", "--loglevel=info", "--concurrency=4"]
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: violationsentinel-secrets
+              key: database-url
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: violationsentinel-secrets
+              key: redis-url
+        - name: CELERY_BROKER_URL
+          valueFrom:
+            secretKeyRef:
+              name: violationsentinel-secrets
+              key: celery-broker-url
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: violationsentinel-celery-beat
+  labels:
+    app: violationsentinel
+    component: celery-beat
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: violationsentinel
+      component: celery-beat
+  template:
+    metadata:
+      labels:
+        app: violationsentinel
+        component: celery-beat
+    spec:
+      containers:
+      - name: celery-beat
+        image: violationsentinel/api:latest
+        command: ["celery", "-A", "app.celery_worker", "beat", "--loglevel=info"]
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: violationsentinel-secrets
+              key: database-url
+        - name: CELERY_BROKER_URL
+          valueFrom:
+            secretKeyRef:
+              name: violationsentinel-secrets
+              key: celery-broker-url
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
