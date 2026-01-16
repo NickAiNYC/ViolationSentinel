@@ -5,12 +5,22 @@ Tests the core competitive moat feature.
 """
 
 import pytest
-from risk_engine.pre1974_multiplier import (
-    pre1974_risk_multiplier,
-    get_building_era_risk,
-    is_pre1974_building,
-    calculate_portfolio_pre1974_stats
-)
+
+# Support both old and new package structure
+try:
+    from src.violationsentinel.scoring import (
+        pre1974_risk_multiplier,
+        get_building_era_risk,
+        is_pre1974_building,
+        calculate_portfolio_pre1974_stats
+    )
+except ImportError:
+    from risk_engine.pre1974_multiplier import (
+        pre1974_risk_multiplier,
+        get_building_era_risk,
+        is_pre1974_building,
+        calculate_portfolio_pre1974_stats
+    )
 
 
 class TestPre1974RiskMultiplier:

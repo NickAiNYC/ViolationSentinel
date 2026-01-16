@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "violationsentinel"
+version = "0.1.0"
+description = "NYC property violation monitoring and risk assessment"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [
+    {name = "ViolationSentinel Team"}
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "License :: OSI Approved :: MIT License",
+]
+
+dependencies = [
+    "pandas>=2.0.0",
+    "requests>=2.31.0",
+    "python-dotenv>=1.0.0",
+    "fastapi>=0.104.0",
+    "uvicorn>=0.24.0",
+    "streamlit>=1.32.0",
+    "plotly>=5.22.0",
+    "pytest>=7.4.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/NickAiNYC/ViolationSentinel"
+Documentation = "https://github.com/NickAiNYC/ViolationSentinel/blob/main/README.md"

@@ -6,10 +6,22 @@ Tests all competitive moat features working together.
 
 import pytest
 from datetime import datetime
-from risk_engine.pre1974_multiplier import pre1974_risk_multiplier
-from risk_engine.inspector_patterns import inspector_risk_multiplier, get_borough_from_bbl
-from risk_engine.seasonal_heat_model import heat_violation_forecast, is_heat_season
-from risk_engine.peer_benchmark import peer_percentile
+
+# Support both old and new package structure
+try:
+    from src.violationsentinel.scoring import (
+        pre1974_risk_multiplier,
+        inspector_risk_multiplier,
+        get_borough_from_bbl,
+        heat_violation_forecast,
+        is_heat_season,
+        peer_percentile,
+    )
+except ImportError:
+    from risk_engine.pre1974_multiplier import pre1974_risk_multiplier
+    from risk_engine.inspector_patterns import inspector_risk_multiplier, get_borough_from_bbl
+    from risk_engine.seasonal_heat_model import heat_violation_forecast, is_heat_season
+    from risk_engine.peer_benchmark import peer_percentile
 
 
 class TestInspectorPatterns:

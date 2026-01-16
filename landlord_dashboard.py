@@ -10,15 +10,32 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-from dob_violations.dob_engine import DOBViolationMonitor
-from risk_engine.pre1974_multiplier import (
-    pre1974_risk_multiplier, 
-    get_building_era_risk,
-    calculate_portfolio_pre1974_stats
-)
-from risk_engine.inspector_patterns import inspector_risk_multiplier, get_district_hotspot
-from risk_engine.seasonal_heat_model import heat_violation_forecast, is_heat_season
-from risk_engine.peer_benchmark import peer_percentile, calculate_portfolio_peer_ranking
+# Support both old and new package structure for backward compatibility
+try:
+    from src.violationsentinel.data import DOBViolationMonitor
+    from src.violationsentinel.scoring import (
+        pre1974_risk_multiplier, 
+        get_building_era_risk,
+        calculate_portfolio_pre1974_stats,
+        inspector_risk_multiplier,
+        get_district_hotspot,
+        heat_violation_forecast,
+        is_heat_season,
+        peer_percentile,
+        calculate_portfolio_peer_ranking,
+    )
+except ImportError:
+    # Fallback to old import paths
+    from dob_violations.dob_engine import DOBViolationMonitor
+    from risk_engine.pre1974_multiplier import (
+        pre1974_risk_multiplier, 
+        get_building_era_risk,
+        calculate_portfolio_pre1974_stats
+    )
+    from risk_engine.inspector_patterns import inspector_risk_multiplier, get_district_hotspot
+    from risk_engine.seasonal_heat_model import heat_violation_forecast, is_heat_season
+    from risk_engine.peer_benchmark import peer_percentile, calculate_portfolio_peer_ranking
+
 from vs_components.components.pre1974_banner import (
     show_pre1974_banner,
     show_pre1974_stats,
