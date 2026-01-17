@@ -88,7 +88,10 @@ def calculate_risk_data(bbl: str) -> dict:
     exposure = int(base_exposure * multiplier)
     
     # Generate risk score (0.0 - 1.0)
-    block_num = int(bbl[1:6]) if len(bbl) >= 6 else 5000
+    try:
+        block_num = int(bbl[1:6]) if len(bbl) >= 6 and bbl[1:6].isdigit() else 5000
+    except (ValueError, IndexError):
+        block_num = 5000
     risk_score = min(0.95, max(0.15, 0.5 + (10000 - block_num) / 20000))
     
     # Realistic violation types for NYC

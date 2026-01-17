@@ -132,7 +132,10 @@ def get_hpd_risk(bbl: str) -> dict:
     
     # Generate risk score (0.0 - 1.0)
     # Higher for older BBLs (lower block numbers often = older buildings)
-    block_num = int(bbl[1:6]) if len(bbl) >= 6 else 5000
+    try:
+        block_num = int(bbl[1:6]) if len(bbl) >= 6 and bbl[1:6].isdigit() else 5000
+    except (ValueError, IndexError):
+        block_num = 5000
     risk_score = min(0.95, max(0.15, 0.5 + (10000 - block_num) / 20000))
     
     # Realistic violation types for NYC
@@ -222,9 +225,12 @@ if bbl:
     if len(bbl) != 10 or not bbl.isdigit():
         st.error("⚠️ Please enter a valid 10-digit BBL number (Borough + Block + Lot)")
     else:
+        # Create set of existing BBLs for O(1) lookup
+        existing_bbls = {p.get("bbl") for p in st.session_state.portfolio}
+        
         # Check tier limits
         if st.session_state.user_tier == "free" and len(st.session_state.portfolio) >= 3:
-            if bbl not in [p.get("bbl") for p in st.session_state.portfolio]:
+            if bbl not in existing_bbls:
                 st.warning("🔒 Free tier limit reached (3 buildings). Upgrade to Pro for unlimited access!")
                 st.markdown(f"""
                     <a href="{STRIPE_CHECKOUT_URL}" target="_blank" class="cta-button">
@@ -235,13 +241,13 @@ if bbl:
                 # Allow re-checking existing buildings
                 pass
         
-        if st.session_state.user_tier != "free" or len(st.session_state.portfolio) < 3 or bbl in [p.get("bbl") for p in st.session_state.portfolio]:
+        if st.session_state.user_tier != "free" or len(st.session_state.portfolio) < 3 or bbl in existing_bbls:
             with st.spinner("Analyzing building risk..."):
                 risk_data = get_hpd_risk(bbl)
                 st.session_state.buildings_scanned += 1
                 
                 # Add to portfolio if new
-                if bbl not in [p.get("bbl") for p in st.session_state.portfolio]:
+                if bbl not in existing_bbls:
                     st.session_state.portfolio.append({
                         "bbl": bbl,
                         "added": datetime.now().isoformat(),

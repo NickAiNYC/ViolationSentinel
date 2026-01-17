@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ main ]
 
+# Limit permissions for all jobs
+permissions:
+  contents: read
+
 jobs:
   # Lint and validate Streamlit app
   validate:
@@ -34,9 +38,10 @@ jobs:
           pip install -r requirements.txt
       
       - name: Lint with ruff
+        continue-on-error: true
         run: |
           pip install ruff
-          ruff check streamlit/ --ignore E501 || true
+          ruff check streamlit/ --ignore E501
       
       - name: Validate Streamlit app syntax
         run: |
@@ -65,12 +70,18 @@ jobs:
           pip install pytest
       
       - name: Run tests
+        continue-on-error: true
+        env:
+          PYTHONPATH: ${{ github.workspace }}
         run: |
-          pytest tests/ -v --tb=short || true
+          pytest tests/ -v --tb=short
       
       - name: Validate features
+        continue-on-error: true
+        env:
+          PYTHONPATH: ${{ github.workspace }}
         run: |
-          python validate_features.py || true
+          python validate_features.py
 
   # Update deployment badges (production)
   update-badges:

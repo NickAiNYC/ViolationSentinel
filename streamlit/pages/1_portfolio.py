@@ -325,20 +325,22 @@ else:
     col1, col2 = st.columns(2)
     
     with col1:
+        pre1974_pct = (len(pre1974_buildings) / len(portfolio_data) * 100) if portfolio_data else 0
         st.metric(
             "Pre-1974 Buildings",
             len(pre1974_buildings),
-            delta=f"{len(pre1974_buildings)/len(portfolio_data)*100:.0f}% of portfolio"
+            delta=f"{pre1974_pct:.0f}% of portfolio"
         )
         if pre1974_buildings:
             avg_pre1974_risk = sum(b["risk_score"] for b in pre1974_buildings) / len(pre1974_buildings)
             st.warning(f"⚠️ Avg Risk Score: {avg_pre1974_risk:.0%} (2.5x baseline risk)")
     
     with col2:
+        post1974_pct = (len(post1974_buildings) / len(portfolio_data) * 100) if portfolio_data else 0
         st.metric(
             "Modern Buildings (1974+)",
             len(post1974_buildings),
-            delta=f"{len(post1974_buildings)/len(portfolio_data)*100:.0f}% of portfolio"
+            delta=f"{post1974_pct:.0f}% of portfolio"
         )
         if post1974_buildings:
             avg_post1974_risk = sum(b["risk_score"] for b in post1974_buildings) / len(post1974_buildings)

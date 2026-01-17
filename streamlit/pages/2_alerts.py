@@ -19,6 +19,13 @@ st.set_page_config(
 # Environment configuration
 STRIPE_CHECKOUT_URL = os.getenv("STRIPE_CHECKOUT_URL", "https://buy.stripe.com/test_placeholder")
 
+
+def is_heat_season() -> bool:
+    """Check if current date is within NYC heat season (Oct 1 - May 31)."""
+    current_month = datetime.now().month
+    return current_month >= 10 or current_month <= 5
+
+
 # Custom CSS
 st.markdown("""
 <style>
@@ -339,8 +346,7 @@ with st.sidebar:
     
     # Heat Season Status
     st.subheader("🌡️ Heat Season")
-    current_month = datetime.now().month
-    if current_month >= 10 or current_month <= 5:
+    if is_heat_season():
         st.error("**ACTIVE**\nOct 1 - May 31\nElevated Class C risk")
     else:
         st.success("**Off-Season**\nLower violation risk")
