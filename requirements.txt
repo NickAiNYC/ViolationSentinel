@@ -8,10 +8,9 @@ fastapi>=0.109.1  # Updated - fixes ReDoS vulnerability
 uvicorn>=0.24.0
 python-multipart>=0.0.18  # Updated - fixes DoS and ReDoS vulnerabilities
 
-# Authentication (for future Stripe integration)
-# stripe>=7.0.0
-# python-jose[cryptography]>=3.3.0
-# passlib[bcrypt]>=1.7.4
+# Monetization & Notifications
+stripe>=7.0.0
+twilio>=9.0.0
 
 # Development
 pytest>=7.4.0
