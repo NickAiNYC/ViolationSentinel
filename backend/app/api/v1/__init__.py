@@ -5,7 +5,7 @@ API v1 Router
 from fastapi import APIRouter
 
 from .endpoints import (
-    auth, properties, violations, reports, webhooks, analytics, admin
+    auth, properties, violations, reports, webhooks, analytics, admin, risk
 )
 
 api_router = APIRouter()
@@ -17,3 +17,4 @@ api_router.include_router(reports.router, prefix="/reports", tags=["Reports"])
 api_router.include_router(webhooks.router, prefix="/webhooks", tags=["Webhooks"])
 api_router.include_router(analytics.router, prefix="/analytics", tags=["Analytics"])
 api_router.include_router(admin.router, prefix="/admin", tags=["Admin"])
+api_router.include_router(risk.router, prefix="/risk", tags=["Risk Assessment"])
