@@ -1,4 +1,9 @@
 # ViolationSentinel - Unified Backend and Dashboard
+#
+# This Dockerfile builds a unified container with both FastAPI API and Streamlit dashboard.
+# Used by docker-compose.prod.yml for the simple production deployment.
+# For enterprise deployment with separate services, use docker-compose.yml with backend/Dockerfile.
+#
 FROM python:3.11-slim
 
 # Set working directory

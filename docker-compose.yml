@@ -1,5 +1,10 @@
 # Enterprise Docker Compose - Full Stack
 # PostgreSQL, Redis, ElasticSearch, RabbitMQ, API, Frontend, Workers
+# 
+# This compose file is for the enterprise deployment with separate backend services.
+# Use docker-compose.prod.yml for the simpler Streamlit-only deployment.
+#
+# Usage: docker-compose up -d
 
 version: '3.8'
 

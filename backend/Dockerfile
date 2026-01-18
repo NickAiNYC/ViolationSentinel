@@ -1,3 +1,9 @@
+# Backend Dockerfile - FastAPI Enterprise API
+#
+# This Dockerfile is for the backend API service only.
+# Used by docker-compose.yml for the enterprise deployment.
+# For the unified Streamlit + API deployment, use the root Dockerfile.
+#
 # Multi-stage build for production-ready container
 FROM python:3.11-slim as builder
 
