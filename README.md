@@ -146,11 +146,18 @@ cd ViolationSentinel
 # Install dependencies
 pip install -r requirements.txt
 
-# Run the Streamlit app
+# Run the HPD Risk Radar MVP (single building lookup)
 streamlit run streamlit/app.py
+
+# OR run the Landlord Dashboard (portfolio management + real-time updates)
+streamlit run landlord_dashboard.py
 
 # Open http://localhost:8501
 ```
+
+> **Note**: Two dashboard options are available:
+> - `streamlit/app.py` - **HPD Risk Radar MVP**: Quick BBL lookup with fine exposure and Stripe checkout
+> - `landlord_dashboard.py` - **Landlord Dashboard**: Full portfolio management with WebSocket updates, risk engine, and competitive moat features
 
 ### Option 2: Docker Compose (Full Stack - 5 minutes)
 

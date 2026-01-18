@@ -1,6 +1,12 @@
+# ViolationSentinel - Main Application Requirements
+#
+# This requirements file is for the unified Streamlit + FastAPI deployment.
+# Used by the root Dockerfile and docker-compose.prod.yml.
+# For enterprise backend-only deployment, see backend/requirements.txt.
+
 # Core Data Processing
-pandas>=2.0.0
-requests>=2.31.0
+pandas>=2.2.0
+requests>=2.32.0
 python-dotenv>=1.0.0
 
 # API Server
@@ -18,20 +24,13 @@ black>=23.0.0
 ruff>=0.1.0
 
 # Dashboard & Visualization
-streamlit>=1.28.0
-plotly>=5.17.0
+streamlit>=1.32.0
+plotly>=5.22.0
 folium>=0.14.0
 altair>=5.0.0
 pydeck>=0.8.0
 matplotlib>=3.7.0
 seaborn>=0.12.0
-
-# DOB Violation Monitoring Dependencies
-streamlit>=1.32.0
-plotly>=5.22.0
-pandas>=2.2.0
-requests>=2.32.0
-python-dotenv>=1.0.0
 
 # NYC Data Client - Production-Grade Resilience
 aiohttp>=3.13.3  # Updated - fixes zip bomb, DoS, and directory traversal vulnerabilities

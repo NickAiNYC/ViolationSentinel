@@ -1,3 +1,11 @@
+# Production Docker Compose - Streamlit Dashboard (Simple Deployment)
+# 
+# This compose file deploys the unified ViolationSentinel application
+# using the root Dockerfile (FastAPI + Streamlit in single container).
+# Use docker-compose.yml for the full enterprise stack deployment.
+#
+# Usage: docker-compose -f docker-compose.prod.yml up -d
+
 version: '3.8'
 
 services:
