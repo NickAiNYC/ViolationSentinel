@@ -8,7 +8,7 @@ mock data, and API authentication.
 import os
 import sys
 from typing import Generator, Dict, Any
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock, AsyncMock, patch
 
 import pytest
@@ -135,8 +135,8 @@ def sample_property() -> Dict[str, Any]:
         "units": 24,
         "is_monitored": True,
         "risk_score": 65.5,
-        "created_at": datetime.utcnow().isoformat(),
-        "updated_at": datetime.utcnow().isoformat()
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
     }
 
 
@@ -154,7 +154,7 @@ def sample_violation() -> Dict[str, Any]:
         "is_resolved": False,
         "fine_amount": 5000.00,
         "inspector_district": "brooklyn_council_36",
-        "created_at": datetime.utcnow().isoformat()
+        "created_at": datetime.now(timezone.utc).isoformat()
     }
 
 
@@ -163,7 +163,7 @@ def sample_complaint_311() -> Dict[str, Any]:
     """Return a sample 311 complaint data dictionary."""
     return {
         "unique_key": "12345678",
-        "created_date": datetime.utcnow().isoformat(),
+        "created_date": datetime.now(timezone.utc).isoformat(),
         "closed_date": None,
         "complaint_type": "HEAT/HOT WATER",
         "descriptor": "ENTIRE BUILDING",

@@ -224,6 +224,182 @@ violations = client.violations.list(property_id="prop-123")
 scan = client.violations.scan(property_ids=["prop-123"])
 ```
 
+---
+
+## 🚀 Quickstart API Examples
+
+### Get Violations by Address
+
+```bash
+# Search violations by address
+curl "http://localhost:8000/api/v1/violations?address=123+Main+St&limit=10" \
+  -H "Authorization: Bearer <your-jwt-token>"
+
+# Response
+{
+  "count": 3,
+  "data": [
+    {
+      "id": "viol-001",
+      "source": "HPD",
+      "class": "C",
+      "description": "Heat and hot water not provided",
+      "issued_date": "2024-01-15",
+      "is_resolved": false
+    }
+  ]
+}
+```
+
+### Get Complaints by BBL
+
+```bash
+# Get 311 complaints for a property
+curl "http://localhost:8000/api/v1/complaints?bbl=1234567890&days=30" \
+  -H "Authorization: Bearer <your-jwt-token>"
+
+# Response
+{
+  "count": 5,
+  "data": [
+    {
+      "unique_key": "12345678",
+      "complaint_type": "HEAT/HOT WATER",
+      "status": "Open",
+      "created_date": "2024-01-10"
+    }
+  ]
+}
+```
+
+### Get Property Risk Score
+
+```bash
+# Get risk assessment for a property
+curl "http://localhost:8000/api/v1/risk/3012650001" \
+  -H "Authorization: Bearer <your-jwt-token>"
+
+# Response
+{
+  "bbl": "3012650001",
+  "risk_score": 85.5,
+  "risk_level": "HIGH",
+  "factors": {
+    "building_era": 3.8,
+    "inspector_hotspot": 2.3,
+    "heat_season": 2.1
+  }
+}
+```
+
+### Trigger Violation Scan
+
+```bash
+# Scan properties for new violations
+curl -X POST "http://localhost:8000/api/v1/violations/scan" \
+  -H "Authorization: Bearer <your-jwt-token>" \
+  -H "Content-Type: application/json" \
+  -d '{"property_ids": ["prop-123", "prop-456"], "sources": ["HPD", "DOB", "311"]}'
+
+# Response
+{
+  "scan_id": "scan-789",
+  "status": "queued",
+  "properties_scanned": 2
+}
+```
+
+### Health Check
+
+```bash
+# Check API health
+curl "http://localhost:8000/health"
+
+# Response
+{
+  "status": "healthy",
+  "version": "1.0.0",
+  "environment": "production"
+}
+```
+
+---
+
+## 🗄️ Database Schema
+
+### Core Tables
+
+| Table | Columns | Purpose |
+|-------|---------|---------|
+| `hpd_violations` | `id`, `bbl`, `address`, `violation_date`, `class`, `description`, `is_resolved`, `fine_amount` | HPD Housing violations (TimescaleDB hypertable) |
+| `dob_violations` | `id`, `bbl`, `bin`, `violation_number`, `issue_date`, `violation_type`, `description` | DOB Building violations |
+| `complaints_311` | `unique_key`, `bbl`, `complaint_type`, `status`, `created_date`, `closed_date`, `descriptor` | 311 Service requests |
+| `properties` | `id`, `bbl`, `address`, `borough`, `year_built`, `units`, `is_monitored`, `risk_score` | Property registry |
+| `tenants` | `id`, `name`, `subscription_tier`, `created_at`, `settings` | Multi-tenant customers |
+| `users` | `id`, `email`, `hashed_password`, `tenant_id`, `role`, `is_active` | User accounts |
+| `webhooks` | `id`, `tenant_id`, `url`, `events`, `is_active`, `secret` | Webhook configurations |
+| `scan_jobs` | `id`, `tenant_id`, `status`, `started_at`, `completed_at`, `violations_found` | Background scan jobs |
+
+### Risk Engine Tables
+
+| Table | Columns | Purpose |
+|-------|---------|---------|
+| `risk_scores` | `id`, `property_id`, `score`, `factors`, `calculated_at` | Risk assessment results |
+| `inspector_patterns` | `council_district`, `multiplier`, `description`, `updated_at` | Inspector hotspot data |
+| `heat_forecasts` | `id`, `property_id`, `forecast_date`, `risk_level`, `days_to_violation` | Heat season predictions |
+
+---
+
+## ⚙️ Environment Variables
+
+### Required Variables
+
+| Variable | Default | Required | Description |
+|----------|---------|----------|-------------|
+| `DATABASE_URL` | - | ✅ | PostgreSQL connection string |
+| `REDIS_URL` | - | ✅ | Redis connection string |
+| `SECRET_KEY` | - | ✅ | JWT signing secret (min 32 chars) |
+| `HPD_API_KEY` | - | ✅ | NYC Open Data API token |
+
+### Optional Variables
+
+| Variable | Default | Required | Description |
+|----------|---------|----------|-------------|
+| `ENVIRONMENT` | `development` | ❌ | Environment name (development/staging/production) |
+| `DEBUG` | `false` | ❌ | Enable debug mode |
+| `LOG_LEVEL` | `INFO` | ❌ | Logging level (DEBUG/INFO/WARNING/ERROR) |
+| `CELERY_BROKER_URL` | - | ❌ | RabbitMQ connection for background tasks |
+| `ELASTICSEARCH_URL` | - | ❌ | ElasticSearch URL for full-text search |
+| `RATE_LIMIT` | `100` | ❌ | API rate limit (requests per minute) |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | `11520` | ❌ | JWT token expiration (8 days default) |
+| `STRIPE_SECRET_KEY` | - | ❌ | Stripe API key for payments |
+| `TWILIO_ACCOUNT_SID` | - | ❌ | Twilio SID for SMS alerts |
+| `TWILIO_AUTH_TOKEN` | - | ❌ | Twilio auth token |
+| `SLACK_WEBHOOK_URL` | - | ❌ | Slack webhook for notifications |
+| `SENTRY_DSN` | - | ❌ | Sentry DSN for error tracking |
+| `BACKEND_CORS_ORIGINS` | `["*"]` | ❌ | Allowed CORS origins (JSON array) |
+
+### Example `.env` File
+
+```bash
+# Copy from .env.example and customize
+cp .env.example .env
+
+# Required
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/violationsentinel
+REDIS_URL=redis://localhost:6379/0
+SECRET_KEY=your-super-secret-key-minimum-32-characters
+HPD_API_KEY=your-nyc-open-data-api-key
+
+# Optional
+ENVIRONMENT=development
+DEBUG=true
+LOG_LEVEL=INFO
+RATE_LIMIT=100
+```
+
+---
+
 ## 📁 Enterprise Project Structure
 
 ```

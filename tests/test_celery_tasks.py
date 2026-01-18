@@ -7,7 +7,7 @@ and other background task functionality.
 
 import pytest
 from unittest.mock import MagicMock, patch, AsyncMock
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 
 class TestViolationScanTasks:
@@ -74,7 +74,7 @@ class TestReportGenerationTasks:
         report_data = {
             "property_id": "prop-123",
             "violations": [sample_violation],
-            "generated_at": datetime.utcnow().isoformat(),
+            "generated_at": datetime.now(timezone.utc).isoformat(),
             "format": "json"
         }
         
@@ -338,7 +338,7 @@ class TestTaskQueueManagement:
 
     def test_task_eta_scheduling(self, mock_celery):
         """Test tasks can be scheduled with ETA."""
-        future_time = datetime.utcnow() + timedelta(hours=1)
+        future_time = datetime.now(timezone.utc) + timedelta(hours=1)
         
         mock_celery.apply_async(eta=future_time)
         mock_celery.apply_async.assert_called_with(eta=future_time)
