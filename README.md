@@ -359,7 +359,7 @@ curl "http://localhost:8000/health"
 | `DATABASE_URL` | - | ✅ | PostgreSQL connection string |
 | `REDIS_URL` | - | ✅ | Redis connection string |
 | `SECRET_KEY` | - | ✅ | JWT signing secret (min 32 chars) |
-| `HPD_API_KEY` | - | ✅ | NYC Open Data API token |
+| `NYC_OPEN_DATA_APP_TOKEN` | - | ✅ | NYC Open Data API token |
 
 ### Optional Variables
 
@@ -389,7 +389,7 @@ cp .env.example .env
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/violationsentinel
 REDIS_URL=redis://localhost:6379/0
 SECRET_KEY=your-super-secret-key-minimum-32-characters
-HPD_API_KEY=your-nyc-open-data-api-key
+NYC_OPEN_DATA_APP_TOKEN=your-nyc-open-data-api-key
 
 # Optional
 ENVIRONMENT=development

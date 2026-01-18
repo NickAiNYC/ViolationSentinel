@@ -20,6 +20,8 @@ jobs:
   lint:
     name: Lint & Code Quality
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     strategy:
       matrix:
         python-version: ['3.11', '3.12']
@@ -113,6 +115,8 @@ jobs:
   test:
     name: Test Suite (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:
@@ -276,6 +280,8 @@ jobs:
   deploy-staging:
     name: Deploy to Staging
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     needs: [build]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment:
@@ -324,6 +330,8 @@ jobs:
   deploy-prod:
     name: Deploy to Production
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     needs: [deploy-staging]
     if: github.event_name == 'release'
     environment:
@@ -372,6 +380,7 @@ jobs:
   notify-failure:
     name: Notify on Failure
     runs-on: ubuntu-latest
+    permissions: {}
     needs: [lint, security, test, build]
     if: failure() && secrets.SLACK_WEBHOOK != ''
     
