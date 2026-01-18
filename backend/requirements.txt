@@ -1,4 +1,9 @@
-# Backend requirements for enterprise deployment
+# Backend Requirements - Enterprise Deployment
+#
+# This requirements file is for the FastAPI enterprise backend only.
+# Used by docker-compose.yml with the backend/Dockerfile.
+# For the unified Streamlit + API deployment, see the root requirements.txt.
+
 # Core
 fastapi==0.109.1  # Updated from 0.104.1 - fixes ReDoS vulnerability
 uvicorn[standard]==0.24.0
