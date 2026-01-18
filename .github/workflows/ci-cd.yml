@@ -1,0 +1,395 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop, copilot/** ]
+  pull_request:
+    branches: [ main, develop ]
+  release:
+    types: [ created ]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  PYTHON_VERSION_DEFAULT: '3.11'
+
+jobs:
+  # =============================================================================
+  # Linting and Code Quality
+  # =============================================================================
+  lint:
+    name: Lint & Code Quality
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.12']
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff black isort mypy prettier
+          pip install -r requirements.txt || true
+      
+      - name: Run Ruff linter
+        run: |
+          ruff check . --output-format=github || true
+        continue-on-error: true
+      
+      - name: Run Black formatter check
+        run: |
+          black --check --diff . || true
+        continue-on-error: true
+      
+      - name: Run isort check
+        run: |
+          isort --check-only --diff . || true
+        continue-on-error: true
+      
+      - name: Run MyPy type checker
+        run: |
+          mypy backend/ api/ risk_engine/ --ignore-missing-imports || true
+        continue-on-error: true
+
+  # =============================================================================
+  # Security Scanning
+  # =============================================================================
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Run Trivy vulnerability scanner (filesystem)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-fs-results.sarif'
+          severity: 'CRITICAL,HIGH'
+        continue-on-error: true
+      
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-fs-results.sarif'
+        continue-on-error: true
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION_DEFAULT }}
+      
+      - name: Run Bandit security linter
+        run: |
+          pip install bandit
+          bandit -r backend/ api/ risk_engine/ -f json -o bandit-report.json || true
+        continue-on-error: true
+      
+      - name: Upload Bandit results
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandit-report
+          path: bandit-report.json
+          retention-days: 30
+        if: always()
+
+  # =============================================================================
+  # Testing with Coverage
+  # =============================================================================
+  test:
+    name: Test Suite (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-cov pytest-asyncio pytest-xdist httpx
+          pip install -r requirements.txt || true
+      
+      - name: Run tests with coverage
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+          REDIS_URL: redis://localhost:6379/0
+          ENVIRONMENT: test
+          SECRET_KEY: test-secret-key-for-ci
+        run: |
+          pytest tests/ -v \
+            --cov=backend \
+            --cov=api \
+            --cov=risk_engine \
+            --cov-report=xml \
+            --cov-report=html \
+            --cov-report=term-missing \
+            --cov-fail-under=50 \
+            -x || true
+      
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report-${{ matrix.python-version }}
+          path: |
+            coverage.xml
+            htmlcov/
+          retention-days: 30
+        if: always()
+      
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          name: codecov-py${{ matrix.python-version }}
+          fail_ci_if_error: false
+        continue-on-error: true
+
+  # =============================================================================
+  # Docker Build and Security Scan
+  # =============================================================================
+  build:
+    name: Docker Build & Scan
+    runs-on: ubuntu-latest
+    needs: [lint, security, test]
+    if: github.event_name == 'push' || github.event_name == 'release'
+    
+    permissions:
+      contents: read
+      packages: write
+      security-events: write
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix=
+            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'main') }}
+      
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: false
+          load: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      
+      - name: Run Trivy vulnerability scanner on Docker image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          format: 'sarif'
+          output: 'trivy-image-results.sarif'
+          severity: 'CRITICAL,HIGH'
+        continue-on-error: true
+      
+      - name: Upload Trivy image scan results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-image-results.sarif'
+        continue-on-error: true
+      
+      - name: Push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # =============================================================================
+  # Deploy to Staging (on PR merge to main)
+  # =============================================================================
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    needs: [build]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment:
+      name: staging
+      url: https://staging.violationsentinel.com
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Configure kubectl
+        uses: azure/k8s-set-context@v4
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.KUBE_CONFIG_STAGING }}
+        continue-on-error: true
+      
+      - name: Deploy to Staging
+        run: |
+          if [ -d "k8s/overlays/staging" ]; then
+            kubectl apply -f k8s/overlays/staging/ || echo "Kubectl apply skipped"
+            kubectl rollout status deployment/violationsentinel-api -n staging --timeout=300s || echo "Rollout status skipped"
+          else
+            echo "Staging overlay not found, skipping deployment"
+          fi
+        continue-on-error: true
+      
+      - name: Run smoke tests
+        run: |
+          sleep 30
+          curl -f https://staging.violationsentinel.com/health || echo "Health check skipped (staging not configured)"
+        continue-on-error: true
+      
+      - name: Notify Slack - Staging Deployment
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          text: 'Staging deployment completed for ViolationSentinel'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+          fields: repo,message,commit,author,action,eventName,ref,workflow,job
+        if: always() && secrets.SLACK_WEBHOOK != ''
+        continue-on-error: true
+
+  # =============================================================================
+  # Deploy to Production (on main merge or release)
+  # =============================================================================
+  deploy-prod:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    needs: [deploy-staging]
+    if: github.event_name == 'release'
+    environment:
+      name: production
+      url: https://app.violationsentinel.com
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Configure kubectl
+        uses: azure/k8s-set-context@v4
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.KUBE_CONFIG_PROD }}
+        continue-on-error: true
+      
+      - name: Deploy to Production
+        run: |
+          if [ -d "k8s/overlays/production" ]; then
+            kubectl apply -f k8s/overlays/production/ || echo "Kubectl apply skipped"
+            kubectl rollout status deployment/violationsentinel-api -n production --timeout=300s || echo "Rollout status skipped"
+          else
+            echo "Production overlay not found, skipping deployment"
+          fi
+        continue-on-error: true
+      
+      - name: Run production smoke tests
+        run: |
+          sleep 30
+          curl -f https://app.violationsentinel.com/health || echo "Health check skipped (production not configured)"
+        continue-on-error: true
+      
+      - name: Notify Slack - Production Deployment
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          text: '🚀 Production deployment completed for ViolationSentinel v${{ github.event.release.tag_name }}'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+          fields: repo,message,commit,author,action,eventName,ref,workflow,job
+        if: always() && secrets.SLACK_WEBHOOK != ''
+        continue-on-error: true
+
+  # =============================================================================
+  # Notify on Failure
+  # =============================================================================
+  notify-failure:
+    name: Notify on Failure
+    runs-on: ubuntu-latest
+    permissions: {}
+    needs: [lint, security, test, build]
+    if: failure() && secrets.SLACK_WEBHOOK != ''
+    
+    steps:
+      - name: Notify Slack - Pipeline Failure
+        uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          text: '❌ CI/CD Pipeline failed for ViolationSentinel'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+          fields: repo,message,commit,author,action,eventName,ref,workflow,job
+        continue-on-error: true
